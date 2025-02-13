@@ -1,6 +1,23 @@
 import { useState } from 'react';
-import { IconChartBar, IconDatabase, IconMaximize, IconSettings } from '@tabler/icons-react';
-import { ActionIcon, Button, Group, Modal, Paper, Stack, Tabs, Text, Title } from '@mantine/core';
+import {
+  IconChartBar,
+  IconDatabase,
+  IconMaximize,
+  IconMaximizeOff,
+  IconSettings,
+} from '@tabler/icons-react';
+import {
+  ActionIcon,
+  Button,
+  Group,
+  Modal,
+  Paper,
+  Stack,
+  Tabs,
+  Text,
+  Title,
+  useMantineTheme,
+} from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { ERDiagram } from '../Visualization/ERDiagram';
 import { RelationshipGraph } from '../Visualization/RelationshipGraph';
@@ -17,9 +34,10 @@ interface ProjectDetailsProps {
 }
 
 export function ProjectDetails({ project }: ProjectDetailsProps) {
-  const [fullscreenOpened, { open: openFullscreen, close: closeFullscreen }] = useDisclosure(false);
+  const theme = useMantineTheme();
   const [activeTab, setActiveTab] = useState<string>('models');
-  const [fullscreenContent, setFullscreenContent] = useState<React.ReactNode | null>(null);
+  const [fullscreenContent, setFullscreenContent] = useState<'er' | 'graph' | null>(null);
+  const [fullscreenOpened, { open: openFullscreen, close: closeFullscreen }] = useDisclosure(false);
 
   const mockNodes = [
     { id: '1', name: 'User', type: 'collection' },
@@ -54,8 +72,8 @@ export function ProjectDetails({ project }: ProjectDetailsProps) {
     },
   ];
 
-  const handleFullscreen = (content: React.ReactNode) => {
-    setFullscreenContent(content);
+  const handleFullscreen = (type: 'er' | 'graph') => {
+    setFullscreenContent(type);
     openFullscreen();
   };
 
@@ -113,7 +131,8 @@ export function ProjectDetails({ project }: ProjectDetailsProps) {
               pos="absolute"
               top={10}
               right={10}
-              onClick={() => handleFullscreen(<ERDiagram models={mockModels} />)}
+              onClick={() => handleFullscreen('er')}
+              style={{ zIndex: 10 }}
             >
               <IconMaximize size={20} />
             </ActionIcon>
@@ -129,9 +148,8 @@ export function ProjectDetails({ project }: ProjectDetailsProps) {
               pos="absolute"
               top={10}
               right={10}
-              onClick={() =>
-                handleFullscreen(<RelationshipGraph nodes={mockNodes} links={mockLinks} />)
-              }
+              onClick={() => handleFullscreen('graph')}
+              style={{ zIndex: 10 }}
             >
               <IconMaximize size={20} />
             </ActionIcon>
@@ -151,9 +169,37 @@ export function ProjectDetails({ project }: ProjectDetailsProps) {
         onClose={closeFullscreen}
         size="100%"
         fullScreen
-        transitionProps={{ transition: 'fade', duration: 200 }}
+        styles={{
+          content: {
+            backgroundColor: theme.colors.gray[0],
+          },
+          header: {
+            backgroundColor: theme.white,
+            borderBottom: `1px solid ${theme.colors.gray[2]}`,
+            padding: theme.spacing.md,
+          },
+          body: {
+            padding: 0,
+          },
+        }}
+        title={
+          <Group>
+            <Title order={3}>
+              {fullscreenContent === 'er' ? 'Diagramme ER' : 'Graphe des relations'}
+            </Title>
+            <ActionIcon variant="light" onClick={closeFullscreen}>
+              <IconMaximizeOff size={20} />
+            </ActionIcon>
+          </Group>
+        }
       >
-        <div style={{ height: 'calc(100vh - 80px)' }}>{fullscreenContent}</div>
+        <div style={{ height: 'calc(100vh - 60px)', padding: theme.spacing.md }}>
+          {fullscreenContent === 'er' ? (
+            <ERDiagram models={mockModels} />
+          ) : (
+            <RelationshipGraph nodes={mockNodes} links={mockLinks} />
+          )}
+        </div>
       </Modal>
     </Stack>
   );
