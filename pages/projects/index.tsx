@@ -5,9 +5,39 @@ import { AppShell } from '../../components/Layout/AppShell';
 import { ProjectCard } from '../../components/Projects/ProjectCard';
 import { useProjectStore } from '../../store/useProjectStore';
 
+// Données factices pour les projets
+const FAKE_PROJECTS = [
+  {
+    id: '1',
+    title: 'Projet Alpha',
+    description: 'Description du projet Alpha',
+    documentsCount: 5,
+    successRate: 80,
+    status: 'active',
+  },
+  {
+    id: '2',
+    title: 'Projet Beta',
+    description: 'Description du projet Beta',
+    documentsCount: 10,
+    successRate: 90,
+    status: 'active',
+  },
+  {
+    id: '3',
+    title: 'Projet Gamma',
+    description: 'Description du projet Gamma',
+    documentsCount: 2,
+    successRate: 70,
+    status: 'inactive',
+  },
+];
+
 export default function ProjectsPage() {
   const router = useRouter();
-  const projects = useProjectStore((state) => state.projects);
+  const projects = useProjectStore((state) =>
+    state.projects.length > 0 ? state.projects : FAKE_PROJECTS
+  );
 
   return (
     <AppShell>
