@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   IconChartBar,
   IconDatabase,
   IconMaximize,
   IconMaximizeOff,
   IconSettings,
+  IconSwitch2,
 } from '@tabler/icons-react';
 import {
   ActionIcon,
@@ -38,6 +39,19 @@ export function ProjectDetails({ project }: ProjectDetailsProps) {
   const [activeTab, setActiveTab] = useState<string>('models');
   const [fullscreenContent, setFullscreenContent] = useState<'er' | 'graph' | null>(null);
   const [fullscreenOpened, { open: openFullscreen, close: closeFullscreen }] = useDisclosure(false);
+  const [key, setKey] = useState(0); // Pour forcer le rendu des composants
+
+  // Force le rendu des composants lors du changement d'onglet
+  useEffect(() => {
+    setKey((prev) => prev + 1);
+  }, [activeTab]);
+
+  // Force le rendu lors de l'ouverture du mode plein écran
+  useEffect(() => {
+    if (fullscreenOpened) {
+      setKey((prev) => prev + 1);
+    }
+  }, [fullscreenOpened]);
 
   const mockNodes = [
     { id: '1', name: 'User', type: 'collection' },
@@ -75,6 +89,15 @@ export function ProjectDetails({ project }: ProjectDetailsProps) {
   const handleFullscreen = (type: 'er' | 'graph') => {
     setFullscreenContent(type);
     openFullscreen();
+  };
+
+  const toggleFullscreenContent = () => {
+    setFullscreenContent((current) => {
+      const newContent = current === 'er' ? 'graph' : 'er';
+      // Force le rendu après le changement
+      setTimeout(() => setKey((prev) => prev + 1), 0);
+      return newContent;
+    });
   };
 
   return (
@@ -136,7 +159,9 @@ export function ProjectDetails({ project }: ProjectDetailsProps) {
             >
               <IconMaximize size={20} />
             </ActionIcon>
-            <ERDiagram models={mockModels} />
+            <div key={`er-${key}`} style={{ height: '100%' }}>
+              <ERDiagram models={mockModels} />
+            </div>
           </Paper>
         </Tabs.Panel>
 
@@ -153,7 +178,9 @@ export function ProjectDetails({ project }: ProjectDetailsProps) {
             >
               <IconMaximize size={20} />
             </ActionIcon>
-            <RelationshipGraph nodes={mockNodes} links={mockLinks} />
+            <div key={`graph-${key}`} style={{ height: '100%' }}>
+              <RelationshipGraph nodes={mockNodes} links={mockLinks} />
+            </div>
           </Paper>
         </Tabs.Panel>
 
@@ -183,22 +210,35 @@ export function ProjectDetails({ project }: ProjectDetailsProps) {
           },
         }}
         title={
-          <Group>
-            <Title order={3}>
-              {fullscreenContent === 'er' ? 'Diagramme ER' : 'Graphe des relations'}
-            </Title>
-            <ActionIcon variant="light" onClick={closeFullscreen}>
-              <IconMaximizeOff size={20} />
-            </ActionIcon>
+          <Group justify="space-between" style={{ width: '100%' }}>
+            <Group>
+              <Title order={3}>
+                {fullscreenContent === 'er' ? 'Diagramme ER' : 'Graphe des relations'}
+              </Title>
+            </Group>
+            <Group>
+              <Button
+                variant="light"
+                leftSection={<IconSwitch2 size={20} />}
+                onClick={toggleFullscreenContent}
+              >
+                Basculer l'affichage
+              </Button>
+              <ActionIcon variant="light" onClick={closeFullscreen}>
+                <IconMaximizeOff size={20} />
+              </ActionIcon>
+            </Group>
           </Group>
         }
       >
         <div style={{ height: 'calc(100vh - 60px)', padding: theme.spacing.md }}>
-          {fullscreenContent === 'er' ? (
-            <ERDiagram models={mockModels} />
-          ) : (
-            <RelationshipGraph nodes={mockNodes} links={mockLinks} />
-          )}
+          <div key={`fullscreen-${key}`} style={{ height: '100%' }}>
+            {fullscreenContent === 'er' ? (
+              <ERDiagram models={mockModels} />
+            ) : (
+              <RelationshipGraph nodes={mockNodes} links={mockLinks} />
+            )}
+          </div>
         </div>
       </Modal>
     </Stack>
