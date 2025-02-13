@@ -1,12 +1,6 @@
-import { useEffect, useState } from 'react';
-import {
-  IconChartBar,
-  IconDatabase,
-  IconMaximize,
-  IconMaximizeOff,
-  IconSettings,
-  IconSwitch2,
-} from '@tabler/icons-react';
+import { useState } from 'react';
+import { useRouter } from 'next/router';
+import { IconChartBar, IconDatabase, IconMaximizeOff, IconSettings } from '@tabler/icons-react';
 import {
   ActionIcon,
   Button,
@@ -22,7 +16,7 @@ import {
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { ModelCard } from '../Models/ModelCard';
-import { RelationshipGraph } from '../Visualization/RelationshipGraph';
+import { GraphView } from '../Visualization/GraphView';
 
 interface ProjectDetailsProps {
   project: {
@@ -37,20 +31,9 @@ interface ProjectDetailsProps {
 
 export function ProjectDetails({ project }: ProjectDetailsProps) {
   const theme = useMantineTheme();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<string>('models');
-  const [fullscreenContent, setFullscreenContent] = useState<'models' | 'graph' | null>(null);
   const [fullscreenOpened, { open: openFullscreen, close: closeFullscreen }] = useDisclosure(false);
-  const [key, setKey] = useState(0);
-
-  useEffect(() => {
-    setKey((prev) => prev + 1);
-  }, [activeTab]);
-
-  useEffect(() => {
-    if (fullscreenOpened) {
-      setKey((prev) => prev + 1);
-    }
-  }, [fullscreenOpened]);
 
   const mockModels = [
     {
@@ -114,13 +97,8 @@ export function ProjectDetails({ project }: ProjectDetailsProps) {
     ),
   };
 
-  const handleFullscreen = (type: 'models' | 'graph') => {
-    setFullscreenContent(type);
-    openFullscreen();
-  };
-
   const handleViewDocuments = (modelName: string) => {
-    console.log('View documents for', modelName);
+    router.push(`/models?collection=${modelName}`);
   };
 
   const handleExportJSON = (modelName: string) => {
@@ -129,14 +107,6 @@ export function ProjectDetails({ project }: ProjectDetailsProps) {
 
   const handleExportCSV = (modelName: string) => {
     console.log('Export CSV for', modelName);
-  };
-
-  const toggleFullscreenContent = () => {
-    setFullscreenContent((current) => {
-      const newContent = current === 'models' ? 'graph' : 'models';
-      setTimeout(() => setKey((prev) => prev + 1), 0);
-      return newContent;
-    });
   };
 
   return (
@@ -188,12 +158,6 @@ export function ProjectDetails({ project }: ProjectDetailsProps) {
         <Tabs.Panel value="models" pt="xl">
           <Paper p="md" withBorder>
             <Stack gap="md">
-              <Group justify="space-between">
-                <Title order={3}>Modèles de données</Title>
-                <ActionIcon variant="light" size="lg" onClick={() => handleFullscreen('models')}>
-                  <IconMaximize size={20} />
-                </ActionIcon>
-              </Group>
               <Grid>
                 {mockModels.map((model) => (
                   <Grid.Col key={model.name} span={{ base: 12, md: 6, lg: 4 }}>
@@ -214,20 +178,7 @@ export function ProjectDetails({ project }: ProjectDetailsProps) {
 
         <Tabs.Panel value="relations" pt="xl">
           <Paper p="md" withBorder h={500} pos="relative">
-            <ActionIcon
-              variant="light"
-              size="lg"
-              pos="absolute"
-              top={10}
-              right={10}
-              onClick={() => handleFullscreen('graph')}
-              style={{ zIndex: 10 }}
-            >
-              <IconMaximize size={20} />
-            </ActionIcon>
-            <div key={`graph-${key}`} style={{ height: '100%' }}>
-              <RelationshipGraph {...graphData} />
-            </div>
+            <GraphView {...graphData} onFullscreen={openFullscreen} />
           </Paper>
         </Tabs.Panel>
 
@@ -251,54 +202,26 @@ export function ProjectDetails({ project }: ProjectDetailsProps) {
             backgroundColor: theme.white,
             borderBottom: `1px solid ${theme.colors.gray[2]}`,
             padding: theme.spacing.md,
+            marginBottom: 0,
           },
           body: {
+            padding: 0,
+          },
+          inner: {
             padding: 0,
           },
         }}
         title={
           <Group justify="space-between" style={{ width: '100%' }}>
-            <Group>
-              <Title order={3}>
-                {fullscreenContent === 'models' ? 'Modèles de données' : 'Graphe des relations'}
-              </Title>
-            </Group>
-            <Group>
-              <Button
-                variant="light"
-                leftSection={<IconSwitch2 size={20} />}
-                onClick={toggleFullscreenContent}
-              >
-                Basculer l'affichage
-              </Button>
-              <ActionIcon variant="light" onClick={closeFullscreen}>
-                <IconMaximizeOff size={20} />
-              </ActionIcon>
-            </Group>
+            <Title order={3}>Graphe des relations</Title>
+            <ActionIcon variant="light" onClick={closeFullscreen}>
+              <IconMaximizeOff size={20} />
+            </ActionIcon>
           </Group>
         }
       >
-        <div style={{ height: 'calc(100vh - 60px)', padding: theme.spacing.md }}>
-          <div key={`fullscreen-${key}`} style={{ height: '100%' }}>
-            {fullscreenContent === 'models' ? (
-              <Grid>
-                {mockModels.map((model) => (
-                  <Grid.Col key={model.name} span={{ base: 12, md: 6, lg: 4 }}>
-                    <ModelCard
-                      name={model.name}
-                      fields={model.fields}
-                      relations={model.relations}
-                      onViewDocuments={() => handleViewDocuments(model.name)}
-                      onExportJSON={() => handleExportJSON(model.name)}
-                      onExportCSV={() => handleExportCSV(model.name)}
-                    />
-                  </Grid.Col>
-                ))}
-              </Grid>
-            ) : (
-              <RelationshipGraph {...graphData} />
-            )}
-          </div>
+        <div style={{ height: 'calc(100vh - 60px)' }}>
+          <GraphView {...graphData} isFullscreen />
         </div>
       </Modal>
     </Stack>
