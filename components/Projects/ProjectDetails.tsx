@@ -10,6 +10,7 @@ import {
 import {
   ActionIcon,
   Button,
+  Grid,
   Group,
   Modal,
   Paper,
@@ -20,7 +21,7 @@ import {
   useMantineTheme,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { ERDiagram } from '../Visualization/ERDiagram';
+import { ModelCard } from '../Models/ModelCard';
 import { RelationshipGraph } from '../Visualization/RelationshipGraph';
 
 interface ProjectDetailsProps {
@@ -37,32 +38,19 @@ interface ProjectDetailsProps {
 export function ProjectDetails({ project }: ProjectDetailsProps) {
   const theme = useMantineTheme();
   const [activeTab, setActiveTab] = useState<string>('models');
-  const [fullscreenContent, setFullscreenContent] = useState<'er' | 'graph' | null>(null);
+  const [fullscreenContent, setFullscreenContent] = useState<'models' | 'graph' | null>(null);
   const [fullscreenOpened, { open: openFullscreen, close: closeFullscreen }] = useDisclosure(false);
-  const [key, setKey] = useState(0); // Pour forcer le rendu des composants
+  const [key, setKey] = useState(0);
 
-  // Force le rendu des composants lors du changement d'onglet
   useEffect(() => {
     setKey((prev) => prev + 1);
   }, [activeTab]);
 
-  // Force le rendu lors de l'ouverture du mode plein écran
   useEffect(() => {
     if (fullscreenOpened) {
       setKey((prev) => prev + 1);
     }
   }, [fullscreenOpened]);
-
-  const mockNodes = [
-    { id: '1', name: 'User', type: 'collection' },
-    { id: '2', name: 'Post', type: 'collection' },
-    { id: '3', name: 'Comment', type: 'collection' },
-  ];
-
-  const mockLinks = [
-    { source: '1', target: '2', type: 'oneToMany' },
-    { source: '2', target: '3', type: 'oneToMany' },
-  ];
 
   const mockModels = [
     {
@@ -71,8 +59,13 @@ export function ProjectDetails({ project }: ProjectDetailsProps) {
         { name: 'id', type: 'ObjectId', required: true },
         { name: 'email', type: 'String', required: true },
         { name: 'name', type: 'String', required: true },
+        { name: 'password', type: 'String', required: true },
+        { name: 'role', type: 'String' },
       ],
-      relations: [{ from: 'User', to: 'Post', type: 'oneToMany' }],
+      relations: [
+        { from: 'posts', to: 'Post' },
+        { from: 'comments', to: 'Comment' },
+      ],
     },
     {
       name: 'Post',
@@ -81,20 +74,66 @@ export function ProjectDetails({ project }: ProjectDetailsProps) {
         { name: 'title', type: 'String', required: true },
         { name: 'content', type: 'String', required: true },
         { name: 'authorId', type: 'ObjectId', required: true },
+        { name: 'createdAt', type: 'Date', required: true },
       ],
-      relations: [{ from: 'Post', to: 'Comment', type: 'oneToMany' }],
+      relations: [
+        { from: 'author', to: 'User' },
+        { from: 'comments', to: 'Comment' },
+      ],
+    },
+    {
+      name: 'Comment',
+      fields: [
+        { name: 'id', type: 'ObjectId', required: true },
+        { name: 'content', type: 'String', required: true },
+        { name: 'authorId', type: 'ObjectId', required: true },
+        { name: 'postId', type: 'ObjectId', required: true },
+        { name: 'createdAt', type: 'Date', required: true },
+      ],
+      relations: [
+        { from: 'author', to: 'User' },
+        { from: 'post', to: 'Post' },
+      ],
     },
   ];
 
-  const handleFullscreen = (type: 'er' | 'graph') => {
+  // Convertir les modèles en format compatible avec le graphe
+  const graphData = {
+    nodes: mockModels.map((model) => ({
+      id: model.name,
+      name: model.name,
+      type: 'collection',
+      fields: model.fields,
+    })),
+    links: mockModels.flatMap((model) =>
+      model.relations.map((relation) => ({
+        source: model.name,
+        target: relation.to,
+        type: 'oneToMany',
+      }))
+    ),
+  };
+
+  const handleFullscreen = (type: 'models' | 'graph') => {
     setFullscreenContent(type);
     openFullscreen();
   };
 
+  const handleViewDocuments = (modelName: string) => {
+    console.log('View documents for', modelName);
+  };
+
+  const handleExportJSON = (modelName: string) => {
+    console.log('Export JSON for', modelName);
+  };
+
+  const handleExportCSV = (modelName: string) => {
+    console.log('Export CSV for', modelName);
+  };
+
   const toggleFullscreenContent = () => {
     setFullscreenContent((current) => {
-      const newContent = current === 'er' ? 'graph' : 'er';
-      // Force le rendu après le changement
+      const newContent = current === 'models' ? 'graph' : 'models';
       setTimeout(() => setKey((prev) => prev + 1), 0);
       return newContent;
     });
@@ -147,21 +186,29 @@ export function ProjectDetails({ project }: ProjectDetailsProps) {
         </Tabs.List>
 
         <Tabs.Panel value="models" pt="xl">
-          <Paper p="md" withBorder h={500} pos="relative">
-            <ActionIcon
-              variant="light"
-              size="lg"
-              pos="absolute"
-              top={10}
-              right={10}
-              onClick={() => handleFullscreen('er')}
-              style={{ zIndex: 10 }}
-            >
-              <IconMaximize size={20} />
-            </ActionIcon>
-            <div key={`er-${key}`} style={{ height: '100%' }}>
-              <ERDiagram models={mockModels} />
-            </div>
+          <Paper p="md" withBorder>
+            <Stack gap="md">
+              <Group justify="space-between">
+                <Title order={3}>Modèles de données</Title>
+                <ActionIcon variant="light" size="lg" onClick={() => handleFullscreen('models')}>
+                  <IconMaximize size={20} />
+                </ActionIcon>
+              </Group>
+              <Grid>
+                {mockModels.map((model) => (
+                  <Grid.Col key={model.name} span={{ base: 12, md: 6, lg: 4 }}>
+                    <ModelCard
+                      name={model.name}
+                      fields={model.fields}
+                      relations={model.relations}
+                      onViewDocuments={() => handleViewDocuments(model.name)}
+                      onExportJSON={() => handleExportJSON(model.name)}
+                      onExportCSV={() => handleExportCSV(model.name)}
+                    />
+                  </Grid.Col>
+                ))}
+              </Grid>
+            </Stack>
           </Paper>
         </Tabs.Panel>
 
@@ -179,7 +226,7 @@ export function ProjectDetails({ project }: ProjectDetailsProps) {
               <IconMaximize size={20} />
             </ActionIcon>
             <div key={`graph-${key}`} style={{ height: '100%' }}>
-              <RelationshipGraph nodes={mockNodes} links={mockLinks} />
+              <RelationshipGraph {...graphData} />
             </div>
           </Paper>
         </Tabs.Panel>
@@ -213,7 +260,7 @@ export function ProjectDetails({ project }: ProjectDetailsProps) {
           <Group justify="space-between" style={{ width: '100%' }}>
             <Group>
               <Title order={3}>
-                {fullscreenContent === 'er' ? 'Diagramme ER' : 'Graphe des relations'}
+                {fullscreenContent === 'models' ? 'Modèles de données' : 'Graphe des relations'}
               </Title>
             </Group>
             <Group>
@@ -233,10 +280,23 @@ export function ProjectDetails({ project }: ProjectDetailsProps) {
       >
         <div style={{ height: 'calc(100vh - 60px)', padding: theme.spacing.md }}>
           <div key={`fullscreen-${key}`} style={{ height: '100%' }}>
-            {fullscreenContent === 'er' ? (
-              <ERDiagram models={mockModels} />
+            {fullscreenContent === 'models' ? (
+              <Grid>
+                {mockModels.map((model) => (
+                  <Grid.Col key={model.name} span={{ base: 12, md: 6, lg: 4 }}>
+                    <ModelCard
+                      name={model.name}
+                      fields={model.fields}
+                      relations={model.relations}
+                      onViewDocuments={() => handleViewDocuments(model.name)}
+                      onExportJSON={() => handleExportJSON(model.name)}
+                      onExportCSV={() => handleExportCSV(model.name)}
+                    />
+                  </Grid.Col>
+                ))}
+              </Grid>
             ) : (
-              <RelationshipGraph nodes={mockNodes} links={mockLinks} />
+              <RelationshipGraph {...graphData} />
             )}
           </div>
         </div>
