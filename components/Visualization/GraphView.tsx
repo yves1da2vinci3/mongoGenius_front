@@ -52,7 +52,7 @@ export function GraphView({ nodes, links, onFullscreen, isFullscreen }: GraphVie
       case 'graph':
         return (
           <div style={contentStyle}>
-            <RelationshipGraph nodes={nodes} links={links} />
+            <RelationshipGraph nodes={nodes} links={links} scale={scale} />
           </div>
         );
       case 'er':

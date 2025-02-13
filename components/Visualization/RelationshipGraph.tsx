@@ -1,11 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { IconArrowsMaximize, IconHome, IconZoomIn, IconZoomOut } from '@tabler/icons-react';
 import * as d3 from 'd3';
-import { ActionIcon, Group, Paper, SegmentedControl, Stack, Text } from '@mantine/core';
-import { MermaidGraph } from './MermaidGraph';
-import { TableGraph } from './TableGraph';
+import { Paper } from '@mantine/core';
 
 interface Node extends d3.SimulationNodeDatum {
   id: string;
@@ -27,6 +24,7 @@ interface SimLink extends d3.SimulationLinkDatum<Node> {
 interface RelationshipGraphProps {
   nodes: Node[];
   links: Link[];
+  scale?: number;
 }
 
 interface TooltipState {
@@ -36,74 +34,14 @@ interface TooltipState {
   y: number;
 }
 
-type DisplayMode = 'force' | 'mermaid' | 'table';
-
-export function RelationshipGraph({ nodes, links }: RelationshipGraphProps) {
+export function RelationshipGraph({ nodes, links, scale = 1 }: RelationshipGraphProps) {
   const svgRef = useRef<SVGSVGElement>(null);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [displayMode, setDisplayMode] = useState<DisplayMode>('force');
   const [tooltip, setTooltip] = useState<TooltipState>({
     visible: false,
     content: null,
     x: 0,
     y: 0,
   });
-
-  const handleZoomIn = () => {
-    if (!svgRef.current) {
-      return;
-    }
-    const svg = d3.select(svgRef.current);
-    const zoom = d3.zoom<SVGSVGElement, unknown>();
-    const transition = svg.transition().duration(300) as unknown as d3.Selection<
-      SVGSVGElement,
-      unknown,
-      null,
-      undefined
-    >;
-    zoom.scaleBy(transition as any, 1.2);
-  };
-
-  const handleZoomOut = () => {
-    if (!svgRef.current) {
-      return;
-    }
-    const svg = d3.select(svgRef.current);
-    const zoom = d3.zoom<SVGSVGElement, unknown>();
-    const transition = svg.transition().duration(300) as unknown as d3.Selection<
-      SVGSVGElement,
-      unknown,
-      null,
-      undefined
-    >;
-    zoom.scaleBy(transition as any, 0.8);
-  };
-
-  const handleResetZoom = () => {
-    if (!svgRef.current) {
-      return;
-    }
-    const svg = d3.select(svgRef.current);
-    const container = svgRef.current.parentElement;
-    if (!container) {
-      return;
-    }
-
-    const width = container.clientWidth;
-    const height = container.clientHeight;
-    const zoom = d3.zoom<SVGSVGElement, unknown>();
-    const transition = svg.transition().duration(300) as unknown as d3.Selection<
-      SVGSVGElement,
-      unknown,
-      null,
-      undefined
-    >;
-    zoom.transform(transition as any, d3.zoomIdentity.translate(width / 2, height / 2).scale(1));
-  };
-
-  const toggleFullscreen = () => {
-    setIsFullscreen(!isFullscreen);
-  };
 
   useEffect(() => {
     if (!svgRef.current || !nodes.length) {
@@ -121,25 +59,15 @@ export function RelationshipGraph({ nodes, links }: RelationshipGraphProps) {
     const width = container.clientWidth;
     const height = container.clientHeight;
 
-    // Créer le SVG avec support du zoom
+    // Créer le SVG
     const svg = d3
       .select(svgRef.current)
       .attr('width', width)
       .attr('height', height)
       .attr('viewBox', [0, 0, width, height]);
 
-    // Ajouter le groupe principal pour le zoom
+    // Ajouter le groupe principal
     const g = svg.append('g');
-
-    // Configurer le zoom
-    const zoom = d3
-      .zoom<SVGSVGElement, unknown>()
-      .scaleExtent([0.1, 4])
-      .on('zoom', (event) => {
-        g.attr('transform', event.transform);
-      });
-
-    svg.call(zoom as any);
 
     // Définir les marqueurs de flèche
     const defs = svg.append('defs');
@@ -235,25 +163,21 @@ export function RelationshipGraph({ nodes, links }: RelationshipGraphProps) {
         setTooltip({
           visible: true,
           content: (
-            <Stack gap="xs">
-              <Text fw={500}>{d.name}</Text>
-              <Text size="sm" c="dimmed">
-                Type: {d.type}
-              </Text>
+            <div>
+              <div style={{ fontWeight: 500 }}>{d.name}</div>
+              <div style={{ color: 'gray', fontSize: '0.9em' }}>Type: {d.type}</div>
               {d.fields && d.fields.length > 0 && (
                 <>
-                  <Text size="sm" fw={500}>
-                    Champs:
-                  </Text>
+                  <div style={{ fontWeight: 500, marginTop: '0.5em' }}>Champs:</div>
                   {d.fields.map((field) => (
-                    <Text key={field.name} size="sm">
+                    <div key={field.name} style={{ fontSize: '0.9em' }}>
                       {field.name}: {field.type}
                       {field.required && ' (requis)'}
-                    </Text>
+                    </div>
                   ))}
                 </>
               )}
-            </Stack>
+            </div>
           ),
           x,
           y,
@@ -286,10 +210,13 @@ export function RelationshipGraph({ nodes, links }: RelationshipGraphProps) {
       nodeGroup.attr('transform', (d) => `translate(${d.x},${d.y})`);
     });
 
+    // Appliquer l'échelle
+    g.attr('transform', `scale(${scale})`);
+
     return () => {
       simulation.stop();
     };
-  }, [nodes, links]);
+  }, [nodes, links, scale]);
 
   const getNodeColor = (type: string) => {
     const colors: { [key: string]: string } = {
@@ -300,94 +227,17 @@ export function RelationshipGraph({ nodes, links }: RelationshipGraphProps) {
     return colors[type] || '#868E96';
   };
 
-  const renderContent = () => {
-    switch (displayMode) {
-      case 'force':
-        return (
-          <svg
-            ref={svgRef}
-            style={{
-              width: '100%',
-              height: '100%',
-              overflow: 'visible',
-            }}
-          />
-        );
-      case 'mermaid':
-        return <MermaidGraph nodes={nodes} links={links} />;
-      case 'table':
-        return <TableGraph nodes={nodes} links={links} />;
-      default:
-        return null;
-    }
-  };
-
   return (
-    <div
-      style={{
-        position: 'relative',
-        width: '100%',
-        height: '100%',
-        ...(isFullscreen && {
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          zIndex: 1000,
-          background: 'white',
-        }),
-      }}
-    >
-      <Group
+    <>
+      <svg
+        ref={svgRef}
         style={{
-          position: 'absolute',
-          top: 10,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 1001,
+          width: '100%',
+          height: '100%',
+          overflow: 'visible',
         }}
-      >
-        <SegmentedControl
-          value={displayMode}
-          onChange={(value) => setDisplayMode(value as DisplayMode)}
-          data={[
-            { label: 'Graphe', value: 'force' },
-            { label: 'Diagramme ER', value: 'mermaid' },
-            { label: 'Tables', value: 'table' },
-          ]}
-        />
-      </Group>
-
-      <Group
-        style={{
-          position: 'absolute',
-          top: 10,
-          right: 10,
-          zIndex: 1001,
-        }}
-      >
-        {displayMode === 'force' && (
-          <>
-            <ActionIcon onClick={handleZoomIn} variant="filled" color="blue">
-              <IconZoomIn size={18} />
-            </ActionIcon>
-            <ActionIcon onClick={handleZoomOut} variant="filled" color="blue">
-              <IconZoomOut size={18} />
-            </ActionIcon>
-            <ActionIcon onClick={handleResetZoom} variant="filled" color="blue">
-              <IconHome size={18} />
-            </ActionIcon>
-          </>
-        )}
-        <ActionIcon onClick={toggleFullscreen} variant="filled" color="blue">
-          <IconArrowsMaximize size={18} />
-        </ActionIcon>
-      </Group>
-
-      {renderContent()}
-
-      {tooltip.visible && displayMode === 'force' && (
+      />
+      {tooltip.visible && (
         <Paper
           shadow="md"
           p="sm"
@@ -403,6 +253,6 @@ export function RelationshipGraph({ nodes, links }: RelationshipGraphProps) {
           {tooltip.content}
         </Paper>
       )}
-    </div>
+    </>
   );
 }
