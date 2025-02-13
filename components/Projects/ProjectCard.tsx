@@ -1,7 +1,12 @@
+import { useRouter } from 'next/router';
 import { IconDots, IconEdit, IconEye, IconTrash } from '@tabler/icons-react';
 import { ActionIcon, Badge, Card, Group, Menu, Progress, Text } from '@mantine/core';
+import { modals } from '@mantine/modals';
+import { notifications } from '@mantine/notifications';
+import { useProjectStore } from '../../store/useProjectStore';
 
 interface ProjectCardProps {
+  id: string;
   title: string;
   description: string;
   documentsCount: number;
@@ -10,14 +15,54 @@ interface ProjectCardProps {
 }
 
 export function ProjectCard({
+  id,
   title,
   description,
   documentsCount,
   successRate,
   status,
 }: ProjectCardProps) {
+  const router = useRouter();
+  const deleteProject = useProjectStore((state) => state.deleteProject);
+
+  const handleView = () => {
+    router.push(`/projects/${id}`);
+  };
+
+  const handleEdit = () => {
+    notifications.show({
+      title: 'Modification',
+      message: 'Fonctionnalité à venir',
+      color: 'blue',
+    });
+  };
+
+  const handleDelete = () => {
+    modals.openConfirmModal({
+      title: 'Supprimer le projet',
+      children: (
+        <Text size="sm">
+          Êtes-vous sûr de vouloir supprimer le projet{' '}
+          <Text span fw={700}>
+            {title}
+          </Text>{' '}
+          ? Cette action est irréversible.
+        </Text>
+      ),
+      confirmProps: { color: 'red' },
+      onConfirm: () => {
+        deleteProject(id);
+        notifications.show({
+          title: 'Succès',
+          message: 'Le projet a été supprimé',
+          color: 'green',
+        });
+      },
+    });
+  };
+
   return (
-    <Card shadow="sm" p="md" radius="md" withBorder>
+    <Card shadow="sm" padding="md" radius="md" withBorder>
       <Group justify="space-between" mb="xs">
         <Text fw={500}>{title}</Text>
         <Group gap={0}>
@@ -32,9 +77,13 @@ export function ProjectCard({
             </Menu.Target>
 
             <Menu.Dropdown>
-              <Menu.Item leftSection={<IconEye size={14} />}>Voir</Menu.Item>
-              <Menu.Item leftSection={<IconEdit size={14} />}>Modifier</Menu.Item>
-              <Menu.Item leftSection={<IconTrash size={14} />} color="red">
+              <Menu.Item leftSection={<IconEye size={14} />} onClick={handleView}>
+                Voir
+              </Menu.Item>
+              <Menu.Item leftSection={<IconEdit size={14} />} onClick={handleEdit}>
+                Modifier
+              </Menu.Item>
+              <Menu.Item leftSection={<IconTrash size={14} />} color="red" onClick={handleDelete}>
                 Supprimer
               </Menu.Item>
             </Menu.Dropdown>

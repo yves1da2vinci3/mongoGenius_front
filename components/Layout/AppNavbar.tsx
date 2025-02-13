@@ -1,3 +1,5 @@
+import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { IconChartBar, IconDatabase, IconHome, IconSettings } from '@tabler/icons-react';
 import { Group, NavLink, Stack, Text } from '@mantine/core';
 
@@ -6,13 +8,28 @@ interface AppNavbarProps {
 }
 
 export function AppNavbar({ width }: AppNavbarProps) {
+  const router = useRouter();
+
+  const links = [
+    { icon: IconHome, label: 'Accueil', href: '/' },
+    { icon: IconDatabase, label: 'Projets', href: '/projects' },
+    { icon: IconChartBar, label: 'Statistiques', href: '/stats' },
+    { icon: IconSettings, label: 'Paramètres', href: '/settings' },
+  ];
+
   return (
     <Stack h="100%" p="xs" justify="space-between">
       <Stack gap="xs">
-        <NavLink label="Tableau de bord" leftSection={<IconHome size={16} />} active />
-        <NavLink label="Projets" leftSection={<IconDatabase size={16} />} />
-        <NavLink label="Statistiques" leftSection={<IconChartBar size={16} />} />
-        <NavLink label="Paramètres" leftSection={<IconSettings size={16} />} />
+        {links.map((link) => (
+          <NavLink
+            key={link.href}
+            component={Link}
+            href={link.href}
+            label={link.label}
+            leftSection={<link.icon size={20} stroke={1.5} />}
+            active={router.pathname === link.href}
+          />
+        ))}
       </Stack>
 
       <Group p="xs">

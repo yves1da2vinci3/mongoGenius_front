@@ -4,6 +4,7 @@ import '@mantine/notifications/styles.css';
 import { AppProps } from 'next/app';
 import Head from 'next/head';
 import { ColorSchemeScript, MantineProvider } from '@mantine/core';
+import { ModalsProvider } from '@mantine/modals';
 import { Notifications } from '@mantine/notifications';
 import { theme } from '../theme';
 
@@ -20,8 +21,10 @@ export default function App(props: AppProps) {
       </Head>
 
       <MantineProvider theme={theme} defaultColorScheme="auto">
-        <Notifications position="top-right" />
-        <Component {...pageProps} />
+        <ModalsProvider labels={{ confirm: 'Confirmer', cancel: 'Annuler' }}>
+          <Notifications position="top-right" />
+          <Component {...pageProps} />
+        </ModalsProvider>
       </MantineProvider>
     </>
   );

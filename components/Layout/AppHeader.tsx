@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { IconMoonStars, IconSun } from '@tabler/icons-react';
 import { ActionIcon, Button, Group, Text, useMantineColorScheme } from '@mantine/core';
 
@@ -31,8 +32,12 @@ export function AppHeader({ height }: AppHeaderProps) {
         >
           {dark ? <IconSun size={18} /> : <IconMoonStars size={18} />}
         </ActionIcon>
-        <Button variant="default">Se connecter</Button>
-        <Button>S'inscrire</Button>
+        <Button component={Link} href="/auth/login" variant="default">
+          Se connecter
+        </Button>
+        <Button component={Link} href="/auth/register">
+          S'inscrire
+        </Button>
       </Group>
     </Group>
   );

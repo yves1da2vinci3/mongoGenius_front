@@ -49,11 +49,11 @@ export function ProjectDetails({ project }: ProjectDetailsProps) {
   ];
 
   return (
-    <Stack spacing="lg">
-      <Group position="apart">
+    <Stack gap="xl">
+      <Group justify="space-between">
         <div>
           <Title order={2}>{project.title}</Title>
-          <Text color="dimmed" size="sm">
+          <Text c="dimmed" size="sm">
             {project.description}
           </Text>
         </div>
@@ -63,18 +63,18 @@ export function ProjectDetails({ project }: ProjectDetailsProps) {
       <Paper p="md" radius="md" withBorder>
         <Group grow>
           <div>
-            <Text size="lg" weight={500}>
+            <Text size="lg" fw={500}>
               Documents générés
             </Text>
-            <Text size="xl" weight={700}>
+            <Text size="xl" fw={700}>
               {project.documentsCount}
             </Text>
           </div>
           <div>
-            <Text size="lg" weight={500}>
+            <Text size="lg" fw={500}>
               Taux de succès
             </Text>
-            <Text size="xl" weight={700} color={project.successRate === 100 ? 'green' : 'blue'}>
+            <Text size="xl" fw={700} c={project.successRate === 100 ? 'green' : 'blue'}>
               {project.successRate}%
             </Text>
           </div>
@@ -83,25 +83,25 @@ export function ProjectDetails({ project }: ProjectDetailsProps) {
 
       <Tabs defaultValue="models">
         <Tabs.List>
-          <Tabs.Tab value="models" icon={<IconDatabase size={14} />}>
+          <Tabs.Tab value="models" leftSection={<IconDatabase size={14} />}>
             Modèles
           </Tabs.Tab>
-          <Tabs.Tab value="relations" icon={<IconChartBar size={14} />}>
+          <Tabs.Tab value="relations" leftSection={<IconChartBar size={14} />}>
             Relations
           </Tabs.Tab>
-          <Tabs.Tab value="settings" icon={<IconSettings size={14} />}>
+          <Tabs.Tab value="settings" leftSection={<IconSettings size={14} />}>
             Paramètres
           </Tabs.Tab>
         </Tabs.List>
 
         <Tabs.Panel value="models" pt="xl">
-          <Paper p="md" withBorder style={{ height: '500px' }}>
+          <Paper p="md" withBorder h={500}>
             <ERDiagram models={mockModels} />
           </Paper>
         </Tabs.Panel>
 
         <Tabs.Panel value="relations" pt="xl">
-          <Paper p="md" withBorder style={{ height: '500px' }}>
+          <Paper p="md" withBorder h={500}>
             <RelationshipGraph nodes={mockNodes} links={mockLinks} />
           </Paper>
         </Tabs.Panel>
