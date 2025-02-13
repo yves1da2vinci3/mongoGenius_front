@@ -1,278 +1,223 @@
-import { useEffect, useState } from 'react';
-import { IconCheck, IconX } from '@tabler/icons-react';
-import { Grid, LoadingOverlay, Stack, Title } from '@mantine/core';
-import { notifications } from '@mantine/notifications';
+import { useState } from 'react';
+import { useRouter } from 'next/router';
+import { IconArrowLeft, IconRefresh, IconSettings } from '@tabler/icons-react';
+import {
+  ActionIcon,
+  Button,
+  Group,
+  LoadingOverlay,
+  Paper,
+  Select,
+  Stack,
+  Table,
+  Text,
+  TextInput,
+  Title,
+} from '@mantine/core';
 import { AppShell } from '../components/Layout/AppShell';
-import { CollectionTable } from '../components/Models/CollectionTable';
-import { ModelCard } from '../components/Models/ModelCard';
-import { RelationshipGraph } from '../components/Visualization/RelationshipGraph';
-import { Model, modelService } from '../services/modelService';
 
-// Types pour les modèles
-interface Field {
-  name: string;
-  type: string;
-  required?: boolean;
+// Types pour les documents
+interface Document {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+  addresses: { street: string; city: string }[];
 }
 
-interface Relation {
-  from: string;
-  to: string;
-}
-
-interface Model {
-  name: string;
-  fields: Field[];
-  relations: Relation[];
-}
-
-// Exemple de données (à remplacer par les vraies données de l'API)
-const SAMPLE_MODELS: Model[] = [
+// Données factices
+const FAKE_DOCUMENTS: Document[] = [
   {
-    name: 'User',
-    fields: [
-      { name: 'email', type: 'String', required: true },
-      { name: 'password', type: 'String', required: true },
-      { name: 'firstName', type: 'String' },
-      { name: 'lastName', type: 'String' },
-      { name: 'role', type: 'String' },
-      { name: 'addresses', type: 'Array' },
-    ],
-    relations: [
-      { from: 'orders', to: 'Order' },
-      { from: 'profile', to: 'Profile' },
-    ],
+    email: 'Misael63@hotmail.com',
+    password: 'RmF5rkmErXLKcSh',
+    firstName: 'Jesus',
+    lastName: 'Bauch',
+    role: 'customer',
+    addresses: [{ street: 'cras omnis ab', city: 'rerum constans t' }],
   },
   {
-    name: 'Order',
-    fields: [
-      { name: 'reference', type: 'String', required: true },
-      { name: 'total', type: 'Number' },
-      { name: 'status', type: 'String' },
-      { name: 'items', type: 'Array' },
-      { name: 'createdAt', type: 'Date' },
-    ],
-    relations: [
-      { from: 'user', to: 'User' },
-      { from: 'products', to: 'Product' },
-    ],
+    email: 'Mckenzie.Casper@hotmail.com',
+    password: '8tqwzzJPwCpUbKG',
+    firstName: 'Tricia',
+    lastName: 'Dietrich',
+    role: 'admin',
+    addresses: [{ street: 'theologus victoria comitatus', city: 'co' }],
+  },
+  {
+    email: 'Gertrude64@gmail.com',
+    password: 'srBqMT8weP2Lkpv',
+    firstName: 'Maxine',
+    lastName: 'Graham',
+    role: 'customer',
+    addresses: [{ street: 'atqui arma vere', city: 'cultura cotidie' }],
+  },
+  {
+    email: 'Kenya93@yahoo.com',
+    password: 'fAJtam0Txcns3XM',
+    firstName: 'Patty',
+    lastName: 'Walsh DVM',
+    role: 'admin',
+    addresses: [{ street: 'tribuo adficio caute', city: 'soluta aetas' }],
+  },
+  {
+    email: 'Kyra_Kunde@gmail.com',
+    password: 'uNUergVdkPVylIW',
+    firstName: 'Lorene',
+    lastName: 'Dr. Kristi Reilly',
+    role: 'admin',
+    addresses: [{ street: 'suppono deinde architecto', city: 'blan' }],
+  },
+  {
+    email: 'Keara12@yahoo.com',
+    password: 'GaYzpAwCMBXVuyy',
+    firstName: 'Joshua',
+    lastName: 'Kunze-Hackett IV',
+    role: 'admin',
+    addresses: [{ street: 'suffoco unus accommodo', city: 'collig' }],
+  },
+  {
+    email: 'Zora_Bergstrom26@yahoo.com',
+    password: 'Qz7u4F7q4ulzDs4',
+    firstName: 'Bertha',
+    lastName: 'Lemke',
+    role: 'admin',
+    addresses: [{ street: 'torqueo vero canonicus', city: 'at vere' }],
+  },
+  {
+    email: 'Ahmed_Dickens@gmail.com',
+    password: '2Q0QGrw3uzku0G8',
+    firstName: 'Perry',
+    lastName: 'Hessel',
+    role: 'customer',
+    addresses: [{ street: 'tot ullam trado', city: 'ipsa porro dolor' }],
+  },
+  {
+    email: 'Sheldon_Cummerata@gmail.com',
+    password: 'PY18BVC9tCZ9x_g',
+    firstName: 'Anna',
+    lastName: 'Parisian',
+    role: 'admin',
+    addresses: [{ street: 'blandior statua sursum', city: 'officia t' }],
   },
 ];
 
 export default function ModelsPage() {
-  const [loading, setLoading] = useState(true);
-  const [models, setModels] = useState<Model[]>([]);
-  const [selectedModel, setSelectedModel] = useState<string | null>(null);
-  const [documents, setDocuments] = useState<any[]>([]);
-  const [documentsLoading, setDocumentsLoading] = useState(false);
-  const [totalDocuments, setTotalDocuments] = useState(0);
+  const router = useRouter();
+  const { collection } = router.query;
+  const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [perPage, setPerPage] = useState(20);
-  const [searchQuery, setSearchQuery] = useState('');
 
-  // Charger les modèles au démarrage
-  useEffect(() => {
-    loadModels();
-  }, []);
+  const totalDocuments = FAKE_DOCUMENTS.length;
+  const totalPages = Math.ceil(totalDocuments / perPage);
 
-  // Charger les documents lorsque le modèle sélectionné change
-  useEffect(() => {
-    if (selectedModel) {
-      loadDocuments(selectedModel, searchQuery, currentPage, perPage);
-    }
-  }, [selectedModel, currentPage, perPage, searchQuery]);
+  const handlePreviousPage = () => {
+    setCurrentPage((prev) => Math.max(1, prev - 1));
+  };
 
-  const loadModels = async () => {
-    try {
-      setLoading(true);
-      const data = await modelService.getModels();
-      setModels(data);
-    } catch (error) {
-      notifications.show({
-        title: 'Erreur',
-        message: 'Impossible de charger les modèles',
-        color: 'red',
-        icon: <IconX size={16} />,
-      });
-    } finally {
+  const handleNextPage = () => {
+    setCurrentPage((prev) => Math.min(totalPages, prev + 1));
+  };
+
+  const handleRefresh = () => {
+    setLoading(true);
+    // Simuler un chargement
+    setTimeout(() => {
       setLoading(false);
-    }
-  };
-
-  const loadDocuments = async (
-    modelName: string,
-    query: string = '',
-    page: number = 1,
-    itemsPerPage: number = 20
-  ) => {
-    try {
-      setDocumentsLoading(true);
-      const response = await modelService.getDocuments(modelName, query, page, itemsPerPage);
-      setDocuments(response.documents);
-      setTotalDocuments(response.total);
-    } catch (error) {
-      notifications.show({
-        title: 'Erreur',
-        message: 'Impossible de charger les documents',
-        color: 'red',
-        icon: <IconX size={16} />,
-      });
-    } finally {
-      setDocumentsLoading(false);
-    }
-  };
-
-  const handleViewDocuments = async (modelName: string) => {
-    setSelectedModel(modelName);
-    setCurrentPage(1);
-    setSearchQuery('');
-  };
-
-  const handleExportJSON = async (modelName: string) => {
-    try {
-      const blob = await modelService.exportJSON(modelName);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${modelName}.json`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-
-      notifications.show({
-        title: 'Succès',
-        message: 'Export JSON téléchargé avec succès',
-        color: 'green',
-        icon: <IconCheck size={16} />,
-      });
-    } catch (error) {
-      notifications.show({
-        title: 'Erreur',
-        message: "Erreur lors de l'export JSON",
-        color: 'red',
-        icon: <IconX size={16} />,
-      });
-    }
-  };
-
-  const handleExportCSV = async (modelName: string) => {
-    try {
-      const blob = await modelService.exportCSV(modelName);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${modelName}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-
-      notifications.show({
-        title: 'Succès',
-        message: 'Export CSV téléchargé avec succès',
-        color: 'green',
-        icon: <IconCheck size={16} />,
-      });
-    } catch (error) {
-      notifications.show({
-        title: 'Erreur',
-        message: "Erreur lors de l'export CSV",
-        color: 'red',
-        icon: <IconX size={16} />,
-      });
-    }
-  };
-
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    setCurrentPage(1);
-  };
-
-  const handleRefresh = async () => {
-    if (selectedModel) {
-      try {
-        await modelService.refreshCollection(selectedModel);
-        await loadModels();
-        await loadDocuments(selectedModel, searchQuery, currentPage, perPage);
-        notifications.show({
-          title: 'Succès',
-          message: 'Collection rafraîchie avec succès',
-          color: 'green',
-          icon: <IconCheck size={16} />,
-        });
-      } catch (error) {
-        notifications.show({
-          title: 'Erreur',
-          message: 'Impossible de rafraîchir la collection',
-          color: 'red',
-          icon: <IconX size={16} />,
-        });
-      }
-    }
-  };
-
-  // Convertir les modèles en format compatible avec le graphe
-  const graphData = {
-    nodes: models.map((model) => ({
-      id: model.name,
-      name: model.name,
-      type: 'collection',
-      fields: model.fields,
-    })),
-    links: models.flatMap((model) =>
-      model.relations.map((relation) => ({
-        source: model.name,
-        target: relation.to,
-        type: 'oneToMany',
-      }))
-    ),
+    }, 500);
   };
 
   return (
     <AppShell>
-      <Stack gap="xl" pos="relative">
+      <Paper p="md" pos="relative">
         <LoadingOverlay visible={loading} />
 
-        <Title order={2}>Modèles de Données</Title>
+        <Stack gap="md">
+          <Group justify="space-between">
+            <Group>
+              <ActionIcon variant="light" onClick={() => router.back()}>
+                <IconArrowLeft size={16} />
+              </ActionIcon>
+              <Title order={3}>Collection: {collection || 'User'}</Title>
+              <Text size="sm" c="dimmed">
+                {totalDocuments} documents
+              </Text>
+            </Group>
+          </Group>
 
-        <Grid>
-          <Grid.Col span={12}>
-            <RelationshipGraph {...graphData} />
-          </Grid.Col>
-        </Grid>
+          <Group>
+            <TextInput
+              placeholder='{ "field": "value" }'
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.currentTarget.value)}
+              style={{ flex: 1 }}
+            />
+            <Button variant="light" leftSection={<IconRefresh size={16} />} onClick={handleRefresh}>
+              Actualiser
+            </Button>
+            <Button variant="light" leftSection={<IconSettings size={16} />}>
+              Options
+            </Button>
+          </Group>
 
-        <Grid>
-          {models.map((model) => (
-            <Grid.Col key={model.name} span={{ base: 12, md: 6, lg: 4 }}>
-              <ModelCard
-                name={model.name}
-                fields={model.fields}
-                relations={model.relations}
-                onViewDocuments={() => handleViewDocuments(model.name)}
-                onExportJSON={() => handleExportJSON(model.name)}
-                onExportCSV={() => handleExportCSV(model.name)}
-              />
-            </Grid.Col>
-          ))}
-        </Grid>
+          <Group justify="space-between">
+            <Select
+              value={String(perPage)}
+              onChange={(value) => value && setPerPage(parseInt(value, 10))}
+              data={[
+                { value: '10', label: '10 par page' },
+                { value: '20', label: '20 par page' },
+                { value: '50', label: '50 par page' },
+                { value: '100', label: '100 par page' },
+              ]}
+              style={{ width: 130 }}
+            />
 
-        {selectedModel && (
-          <CollectionTable
-            collectionName={selectedModel}
-            fields={models.find((m) => m.name === selectedModel)?.fields || []}
-            documents={documents}
-            totalDocuments={totalDocuments}
-            currentPage={currentPage}
-            perPage={perPage}
-            loading={documentsLoading}
-            onRefresh={handleRefresh}
-            onSearch={handleSearch}
-            onPageChange={setCurrentPage}
-            onPerPageChange={setPerPage}
-          />
-        )}
-      </Stack>
+            <Group>
+              <ActionIcon variant="light" disabled={currentPage === 1} onClick={handlePreviousPage}>
+                <IconArrowLeft size={16} />
+              </ActionIcon>
+              <Text size="sm">
+                Page {currentPage} sur {totalPages}
+              </Text>
+              <ActionIcon
+                variant="light"
+                disabled={currentPage === totalPages}
+                onClick={handleNextPage}
+              >
+                <IconArrowLeft size={16} style={{ transform: 'rotate(180deg)' }} />
+              </ActionIcon>
+            </Group>
+          </Group>
+
+          <Table striped highlightOnHover withTableBorder withColumnBorders>
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>EMAIL (STRING)</Table.Th>
+                <Table.Th>PASSWORD (STRING)</Table.Th>
+                <Table.Th>FIRSTNAME (STRING)</Table.Th>
+                <Table.Th>LASTNAME (STRING)</Table.Th>
+                <Table.Th>ROLE (STRING)</Table.Th>
+                <Table.Th>ADDRESSES (ARRAY)</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {FAKE_DOCUMENTS.map((doc, index) => (
+                <Table.Tr key={index}>
+                  <Table.Td>{doc.email}</Table.Td>
+                  <Table.Td>{doc.password}</Table.Td>
+                  <Table.Td>{doc.firstName}</Table.Td>
+                  <Table.Td>{doc.lastName}</Table.Td>
+                  <Table.Td>{doc.role}</Table.Td>
+                  <Table.Td>{JSON.stringify(doc.addresses)}</Table.Td>
+                </Table.Tr>
+              ))}
+            </Table.Tbody>
+          </Table>
+        </Stack>
+      </Paper>
     </AppShell>
   );
 }
