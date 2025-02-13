@@ -1,5 +1,7 @@
-import { IconChartBar, IconDatabase, IconSettings } from '@tabler/icons-react';
-import { Button, Group, Paper, Stack, Tabs, Text, Title } from '@mantine/core';
+import { useState } from 'react';
+import { IconChartBar, IconDatabase, IconMaximize, IconSettings } from '@tabler/icons-react';
+import { ActionIcon, Button, Group, Modal, Paper, Stack, Tabs, Text, Title } from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
 import { ERDiagram } from '../Visualization/ERDiagram';
 import { RelationshipGraph } from '../Visualization/RelationshipGraph';
 
@@ -15,6 +17,10 @@ interface ProjectDetailsProps {
 }
 
 export function ProjectDetails({ project }: ProjectDetailsProps) {
+  const [fullscreenOpened, { open: openFullscreen, close: closeFullscreen }] = useDisclosure(false);
+  const [activeTab, setActiveTab] = useState<string>('models');
+  const [fullscreenContent, setFullscreenContent] = useState<React.ReactNode | null>(null);
+
   const mockNodes = [
     { id: '1', name: 'User', type: 'collection' },
     { id: '2', name: 'Post', type: 'collection' },
@@ -47,6 +53,11 @@ export function ProjectDetails({ project }: ProjectDetailsProps) {
       relations: [{ from: 'Post', to: 'Comment', type: 'oneToMany' }],
     },
   ];
+
+  const handleFullscreen = (content: React.ReactNode) => {
+    setFullscreenContent(content);
+    openFullscreen();
+  };
 
   return (
     <Stack gap="xl">
@@ -81,7 +92,7 @@ export function ProjectDetails({ project }: ProjectDetailsProps) {
         </Group>
       </Paper>
 
-      <Tabs defaultValue="models">
+      <Tabs value={activeTab} onChange={(value) => setActiveTab(value as string)}>
         <Tabs.List>
           <Tabs.Tab value="models" leftSection={<IconDatabase size={14} />}>
             Modèles
@@ -95,13 +106,35 @@ export function ProjectDetails({ project }: ProjectDetailsProps) {
         </Tabs.List>
 
         <Tabs.Panel value="models" pt="xl">
-          <Paper p="md" withBorder h={500}>
+          <Paper p="md" withBorder h={500} pos="relative">
+            <ActionIcon
+              variant="light"
+              size="lg"
+              pos="absolute"
+              top={10}
+              right={10}
+              onClick={() => handleFullscreen(<ERDiagram models={mockModels} />)}
+            >
+              <IconMaximize size={20} />
+            </ActionIcon>
             <ERDiagram models={mockModels} />
           </Paper>
         </Tabs.Panel>
 
         <Tabs.Panel value="relations" pt="xl">
-          <Paper p="md" withBorder h={500}>
+          <Paper p="md" withBorder h={500} pos="relative">
+            <ActionIcon
+              variant="light"
+              size="lg"
+              pos="absolute"
+              top={10}
+              right={10}
+              onClick={() =>
+                handleFullscreen(<RelationshipGraph nodes={mockNodes} links={mockLinks} />)
+              }
+            >
+              <IconMaximize size={20} />
+            </ActionIcon>
             <RelationshipGraph nodes={mockNodes} links={mockLinks} />
           </Paper>
         </Tabs.Panel>
@@ -112,6 +145,16 @@ export function ProjectDetails({ project }: ProjectDetailsProps) {
           </Paper>
         </Tabs.Panel>
       </Tabs>
+
+      <Modal
+        opened={fullscreenOpened}
+        onClose={closeFullscreen}
+        size="100%"
+        fullScreen
+        transitionProps={{ transition: 'fade', duration: 200 }}
+      >
+        <div style={{ height: 'calc(100vh - 80px)' }}>{fullscreenContent}</div>
+      </Modal>
     </Stack>
   );
 }

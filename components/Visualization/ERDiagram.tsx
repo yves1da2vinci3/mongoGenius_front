@@ -31,49 +31,80 @@ export function ERDiagram({ models }: ERDiagramProps) {
       securityLevel: 'loose',
       er: {
         diagramPadding: 20,
+        layoutDirection: 'TB',
+        minEntityWidth: 100,
+        minEntityHeight: 75,
+        entityPadding: 15,
+        stroke: 'gray',
+        fill: 'white',
+        fontSize: 12,
       },
     });
 
-    const diagram = generateERDiagram(models);
+    const generateERDiagram = (models: Model[]) => {
+      let diagram = 'erDiagram\n';
 
-    mermaid.render('er-diagram', diagram).then((result) => {
-      if (containerRef.current) {
-        containerRef.current.innerHTML = result.svg;
+      // Définir les entités avec leurs attributs
+      models.forEach((model) => {
+        diagram += `    ${model.name} {\n`;
+        model.fields.forEach((field) => {
+          diagram += `        ${field.type} ${field.name}${field.required ? ' "required"' : ''}\n`;
+        });
+        diagram += '    }\n';
+      });
+
+      // Définir les relations
+      models.forEach((model) => {
+        model.relations.forEach((relation) => {
+          const relationSymbol = getRelationshipSymbol(relation.type);
+          diagram += `    ${relation.from} ${relationSymbol} ${relation.to} : ""\n`;
+        });
+      });
+
+      return diagram;
+    };
+
+    const getRelationshipSymbol = (type: string) => {
+      switch (type) {
+        case 'oneToOne':
+          return '||--||';
+        case 'oneToMany':
+          return '||--o{';
+        case 'manyToOne':
+          return '}o--||';
+        case 'manyToMany':
+          return '}o--o{';
+        default:
+          return '||--||';
       }
-    });
+    };
+
+    try {
+      const diagram = generateERDiagram(models);
+      mermaid.render('er-diagram', diagram).then((result) => {
+        if (containerRef.current) {
+          containerRef.current.innerHTML = result.svg;
+        }
+      });
+    } catch (error) {
+      console.error('Erreur lors de la génération du diagramme ER:', error);
+      if (containerRef.current) {
+        containerRef.current.innerHTML = '<div>Erreur lors de la génération du diagramme</div>';
+      }
+    }
   }, [models]);
 
-  const generateERDiagram = (models: Model[]) => {
-    let diagram = 'erDiagram\n';
-
-    models.forEach((model) => {
-      // Add entity definition
-      diagram += `    ${model.name} {\n`;
-      model.fields.forEach((field) => {
-        const required = field.required ? ' required' : '';
-        diagram += `        ${field.type} ${field.name}${required}\n`;
-      });
-      diagram += '    }\n';
-
-      // Add relationships
-      model.relations.forEach((relation) => {
-        const relationshipType = getRelationshipType(relation.type);
-        diagram += `    ${relation.from} ${relationshipType} ${relation.to}\n`;
-      });
-    });
-
-    return diagram;
-  };
-
-  const getRelationshipType = (type: string) => {
-    const types: { [key: string]: string } = {
-      oneToOne: '||--||',
-      oneToMany: '||--o{',
-      manyToOne: '}o--||',
-      manyToMany: '}o--o{',
-    };
-    return types[type] || '||--||';
-  };
-
-  return <div ref={containerRef} style={{ width: '100%', height: '100%', overflow: 'auto' }} />;
+  return (
+    <div
+      ref={containerRef}
+      style={{
+        width: '100%',
+        height: '100%',
+        overflow: 'auto',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+      }}
+    />
+  );
 }
