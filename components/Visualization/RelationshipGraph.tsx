@@ -1,8 +1,10 @@
+'use client';
+
 import { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import { Paper, Stack, Text } from '@mantine/core';
 
-interface Node {
+interface Node extends d3.SimulationNodeDatum {
   id: string;
   name: string;
   type: string;
@@ -12,6 +14,10 @@ interface Node {
 interface Link {
   source: string;
   target: string;
+  type: string;
+}
+
+interface SimLink extends d3.SimulationLinkDatum<Node> {
   type: string;
 }
 
@@ -39,61 +45,108 @@ export function RelationshipGraph({ nodes, links }: RelationshipGraphProps) {
   useEffect(() => {
     if (!svgRef.current || !nodes.length) return;
 
-    const width = 800;
-    const height = 600;
-
-    // Clear previous content
+    // Nettoyer le SVG existant
     d3.select(svgRef.current).selectAll('*').remove();
 
-    const svg = d3.select(svgRef.current).attr('width', width).attr('height', height);
+    const container = svgRef.current.parentElement;
+    if (!container) return;
 
+    // Utiliser les dimensions du conteneur
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+
+    const svg = d3
+      .select(svgRef.current)
+      .attr('width', width)
+      .attr('height', height)
+      .attr('viewBox', [0, 0, width, height]);
+
+    // Définir les marqueurs de flèche
+    const defs = svg.append('defs');
+    const markers = {
+      oneToOne: 'arrow-one-to-one',
+      oneToMany: 'arrow-one-to-many',
+      manyToOne: 'arrow-many-to-one',
+      manyToMany: 'arrow-many-to-many',
+    };
+
+    Object.entries(markers).forEach(([key, id]) => {
+      defs
+        .append('marker')
+        .attr('id', id)
+        .attr('viewBox', '0 -5 10 10')
+        .attr('refX', 25)
+        .attr('refY', 0)
+        .attr('markerWidth', 6)
+        .attr('markerHeight', 6)
+        .attr('orient', 'auto')
+        .append('path')
+        .attr('fill', '#999')
+        .attr('d', 'M0,-5L10,0L0,5');
+    });
+
+    // Convertir les liens en format compatible avec d3
+    const simLinks: SimLink[] = links.map((l) => ({
+      source: nodes.find((n) => n.id === l.source)!,
+      target: nodes.find((n) => n.id === l.target)!,
+      type: l.type,
+    }));
+
+    // Créer la simulation
     const simulation = d3
-      .forceSimulation(nodes as d3.SimulationNodeDatum[])
+      .forceSimulation<Node>(nodes)
       .force(
         'link',
         d3
-          .forceLink(links)
-          .id((d: any) => d.id)
-          .distance(100)
+          .forceLink<Node, SimLink>(simLinks)
+          .id((d) => d.id)
+          .distance(150)
       )
-      .force('charge', d3.forceManyBody().strength(-200))
-      .force('center', d3.forceCenter(width / 2, height / 2));
+      .force('charge', d3.forceManyBody().strength(-800))
+      .force('center', d3.forceCenter(width / 2, height / 2))
+      .force('collision', d3.forceCollide().radius(60));
 
+    // Créer les liens
     const link = svg
       .append('g')
       .selectAll('line')
-      .data(links)
+      .data(simLinks)
       .join('line')
       .attr('stroke', '#999')
       .attr('stroke-opacity', 0.6)
-      .attr('stroke-width', 1)
-      .attr('marker-end', (d) => `url(#arrow-${d.type})`);
+      .attr('stroke-width', 2)
+      .attr('marker-end', (d) => `url(#${markers[d.type as keyof typeof markers]})`);
 
-    // Ajout des marqueurs de flèche pour les relations
-    svg
-      .append('defs')
-      .selectAll('marker')
-      .data(['oneToOne', 'oneToMany', 'manyToOne', 'manyToMany'])
-      .join('marker')
-      .attr('id', (d) => `arrow-${d}`)
-      .attr('viewBox', '0 -5 10 10')
-      .attr('refX', 30)
-      .attr('refY', 0)
-      .attr('markerWidth', 6)
-      .attr('markerHeight', 6)
-      .attr('orient', 'auto')
-      .append('path')
-      .attr('fill', '#999')
-      .attr('d', 'M0,-5L10,0L0,5');
+    // Créer les nœuds
+    const nodeGroup = svg.append('g').selectAll<SVGGElement, Node>('g').data(nodes).join('g');
 
-    const node = svg.append('g').selectAll('g').data(nodes).join('g');
+    // Ajouter le comportement de drag
+    nodeGroup.call(
+      d3
+        .drag<SVGGElement, Node>()
+        .on('start', (event: d3.D3DragEvent<SVGGElement, Node, Node>) => {
+          if (!event.active) simulation.alphaTarget(0.3).restart();
+          event.subject.fx = event.subject.x;
+          event.subject.fy = event.subject.y;
+        })
+        .on('drag', (event: d3.D3DragEvent<SVGGElement, Node, Node>) => {
+          event.subject.fx = event.x;
+          event.subject.fy = event.y;
+        })
+        .on('end', (event: d3.D3DragEvent<SVGGElement, Node, Node>) => {
+          if (!event.active) simulation.alphaTarget(0);
+          event.subject.fx = null;
+          event.subject.fy = null;
+        })
+    );
 
-    node
+    // Ajouter les cercles pour les nœuds
+    nodeGroup
       .append('circle')
-      .attr('r', 20)
+      .attr('r', 30)
       .attr('fill', (d) => getNodeColor(d.type))
       .on('mouseover', (event, d: Node) => {
-        const [x, y] = d3.pointer(event);
+        const [x, y] = d3.pointer(event, document.body);
         setTooltip({
           visible: true,
           content: (
@@ -117,53 +170,35 @@ export function RelationshipGraph({ nodes, links }: RelationshipGraphProps) {
               )}
             </Stack>
           ),
-          x: event.pageX,
-          y: event.pageY,
+          x,
+          y,
         });
       })
       .on('mouseout', () => {
         setTooltip((prev) => ({ ...prev, visible: false }));
       });
 
-    node
+    // Ajouter les labels pour les nœuds
+    nodeGroup
       .append('text')
       .text((d) => d.name)
-      .attr('x', 0)
-      .attr('y', 30)
       .attr('text-anchor', 'middle')
+      .attr('dy', 45)
       .attr('fill', '#333')
       .attr('font-size', '12px');
 
+    // Mettre à jour les positions
     simulation.on('tick', () => {
       link
-        .attr('x1', (d: any) => d.source.x)
-        .attr('y1', (d: any) => d.source.y)
-        .attr('x2', (d: any) => d.target.x)
-        .attr('y2', (d: any) => d.target.y);
+        .attr('x1', (d) => (d.source as Node).x!)
+        .attr('y1', (d) => (d.source as Node).y!)
+        .attr('x2', (d) => (d.target as Node).x!)
+        .attr('y2', (d) => (d.target as Node).y!);
 
-      node.attr('transform', (d: any) => `translate(${d.x},${d.y})`);
+      nodeGroup.attr('transform', (d) => `translate(${d.x},${d.y})`);
     });
 
-    // Drag behavior
-    const drag = d3
-      .drag<SVGGElement, Node>()
-      .on('start', (event: any) => {
-        if (!event.active) simulation.alphaTarget(0.3).restart();
-        event.subject.fx = event.subject.x;
-        event.subject.fy = event.subject.y;
-      })
-      .on('drag', (event: any) => {
-        event.subject.fx = event.x;
-        event.subject.fy = event.y;
-      })
-      .on('end', (event: any) => {
-        if (!event.active) simulation.alphaTarget(0);
-        event.subject.fx = null;
-        event.subject.fy = null;
-      });
-
-    node.call(drag as any);
-
+    // Nettoyage
     return () => {
       simulation.stop();
     };
@@ -180,7 +215,14 @@ export function RelationshipGraph({ nodes, links }: RelationshipGraphProps) {
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-      <svg ref={svgRef} style={{ width: '100%', height: '100%' }} />
+      <svg
+        ref={svgRef}
+        style={{
+          width: '100%',
+          height: '100%',
+          overflow: 'visible',
+        }}
+      />
       {tooltip.visible && (
         <Paper
           shadow="md"
