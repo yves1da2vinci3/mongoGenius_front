@@ -59,7 +59,7 @@ export function CreateProjectForm({ onClose }: CreateProjectFormProps) {
 
   return (
     <form onSubmit={handleSubmit}>
-      <Stack spacing="md">
+      <Stack gap="md">
         <TextInput
           required
           label="Nom du projet"
@@ -119,7 +119,7 @@ export function CreateProjectForm({ onClose }: CreateProjectFormProps) {
           {...form.getInputProps('replicaSet')}
         />
 
-        <Group position="right" mt="md">
+        <Group justify="right" mt="md">
           <Button variant="default" onClick={onClose}>
             Annuler
           </Button>

@@ -13,7 +13,7 @@ const FAKE_PROJECTS = [
     description: 'Description du projet Alpha',
     documentsCount: 5,
     successRate: 80,
-    status: 'active',
+    status: 'active' as const,
   },
   {
     id: '2',
@@ -21,7 +21,7 @@ const FAKE_PROJECTS = [
     description: 'Description du projet Beta',
     documentsCount: 10,
     successRate: 90,
-    status: 'active',
+    status: 'active' as const,
   },
   {
     id: '3',
@@ -29,7 +29,7 @@ const FAKE_PROJECTS = [
     description: 'Description du projet Gamma',
     documentsCount: 2,
     successRate: 70,
-    status: 'inactive',
+    status: 'inactive' as const,
   },
 ];
 

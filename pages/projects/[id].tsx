@@ -9,7 +9,7 @@ const FAKE_PROJECT = {
   description: 'Description du projet Alpha',
   documentsCount: 5,
   successRate: 80,
-  status: 'active',
+  status: 'active' as const,
 };
 
 export default function ProjectPage() {

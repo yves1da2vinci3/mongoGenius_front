@@ -1,44 +1,49 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import Script from 'next/script';
 import { Box, LoadingOverlay } from '@mantine/core';
 
-// Déclaration de type pour window.mermaid
-declare global {
-  interface Window {
-    mermaid: any;
-  }
+interface Field {
+  name: string;
+  type: string;
+  required?: boolean;
+}
+
+interface Node {
+  id: string;
+  name: string;
+  type: string;
+  fields?: Field[];
+}
+
+interface Link {
+  source: string;
+  target: string;
+  type: 'oneToOne' | 'oneToMany' | 'manyToOne' | 'manyToMany' | string;
 }
 
 interface ERDiagramProps {
-  nodes: {
-    id: string;
-    name: string;
-    type: string;
-    fields?: { name: string; type: string; required?: boolean }[];
-  }[];
-  links: {
-    source: string;
-    target: string;
-    type: string;
-  }[];
+  nodes: Node[];
+  links: Link[];
 }
 
 export function ERDiagram({ nodes, links }: ERDiagramProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [mermaidCode, setMermaidCode] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
 
-  // Générer le code Mermaid quand les nodes ou links changent
   useEffect(() => {
     try {
       setIsLoading(true);
       setError(null);
 
-      // Générer le code Mermaid
+      if (!containerRef.current) {
+        return;
+      }
+
       let code = 'erDiagram\n';
 
-      // Ajouter les entités et leurs attributs
       nodes.forEach((node) => {
         const entityName = node.name.toLowerCase().replace(/[^a-z0-9]/g, '_');
         code += `    ${entityName} {\n`;
@@ -56,7 +61,6 @@ export function ERDiagram({ nodes, links }: ERDiagramProps) {
         code += '    }\n';
       });
 
-      // Ajouter les relations
       links.forEach((link) => {
         const sourceNode = nodes.find((n) => n.id === link.source);
         const targetNode = nodes.find((n) => n.id === link.target);
@@ -87,62 +91,14 @@ export function ERDiagram({ nodes, links }: ERDiagramProps) {
         }
       });
 
-      setMermaidCode(code);
+      containerRef.current.innerHTML = `<pre class="mermaid bg-white flex justify-center">${code}</pre>`;
+      setIsLoading(false);
     } catch (err) {
       console.error('Erreur lors de la génération du diagramme ER:', err);
       setError(err instanceof Error ? err.message : 'Erreur inconnue');
-    } finally {
       setIsLoading(false);
     }
   }, [nodes, links]);
-
-  // Initialiser et mettre à jour Mermaid quand le code change
-  useEffect(() => {
-    const initMermaid = async () => {
-      try {
-        if (!mermaidCode) {
-          return;
-        }
-
-        // Charger Mermaid dynamiquement
-        if (typeof window.mermaid === 'undefined') {
-          const mermaid = (await import('mermaid')).default;
-          window.mermaid = mermaid;
-        }
-
-        // Initialiser Mermaid avec les options
-        window.mermaid.initialize({
-          startOnLoad: false,
-          theme: 'default',
-          er: {
-            diagramPadding: 20,
-            entityPadding: 15,
-            useMaxWidth: true,
-            layoutDirection: 'TB',
-            minEntityWidth: 100,
-            minEntityHeight: 75,
-            fontSize: 12,
-          },
-          securityLevel: 'loose',
-        });
-
-        // Nettoyer les anciens diagrammes et rendre le nouveau
-        const elements = document.getElementsByClassName('mermaid');
-        if (elements.length > 0) {
-          await window.mermaid.run({
-            nodes: {
-              useMaxWidth: true,
-            },
-          });
-        }
-      } catch (err) {
-        console.error("Erreur lors de l'initialisation de Mermaid:", err);
-        setError(err instanceof Error ? err.message : 'Erreur inconnue');
-      }
-    };
-
-    initMermaid();
-  }, [mermaidCode]);
 
   if (error) {
     return (
@@ -164,6 +120,7 @@ export function ERDiagram({ nodes, links }: ERDiagramProps) {
 
   return (
     <Box
+      ref={containerRef}
       style={{
         width: '100%',
         height: '100%',
@@ -175,7 +132,30 @@ export function ERDiagram({ nodes, links }: ERDiagramProps) {
       }}
     >
       <LoadingOverlay visible={isLoading} />
-      <pre className="mermaid bg-white flex justify-center">{mermaidCode}</pre>
+      <Script
+        type="module"
+        strategy="afterInteractive"
+        dangerouslySetInnerHTML={{
+          __html: `
+            import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+            mermaid.initialize({ 
+              startOnLoad: true,
+              theme: 'default',
+              er: {
+                diagramPadding: 20,
+                entityPadding: 15,
+                useMaxWidth: true,
+                layoutDirection: 'TB',
+                minEntityWidth: 100,
+                minEntityHeight: 75,
+                fontSize: 12,
+              },
+              securityLevel: 'loose',
+            });
+            mermaid.contentLoaded();
+          `,
+        }}
+      />
     </Box>
   );
 }

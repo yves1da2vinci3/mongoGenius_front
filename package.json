@@ -29,6 +29,7 @@
     "@mantine/notifications": "^7.16.3",
     "@next/bundle-analyzer": "^15.1.5",
     "@tabler/icons-react": "^3.30.0",
+    "@theguild/remark-mermaid": "^0.2.0",
     "@types/d3": "^7.4.3",
     "@types/mermaid": "^9.2.0",
     "axios": "^1.7.9",
