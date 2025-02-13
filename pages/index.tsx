@@ -12,9 +12,9 @@ export default function HomePage() {
 
   return (
     <AppShell>
-      <Group position="apart" mb="xl">
+      <Group justify="space-between" mb="xl">
         <Title order={2}>Mes Projets</Title>
-        <Button leftIcon={<IconPlus size={16} />} onClick={open}>
+        <Button leftSection={<IconPlus size={16} />} onClick={open}>
           Nouveau Projet
         </Button>
       </Group>

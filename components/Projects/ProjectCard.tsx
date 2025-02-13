@@ -1,5 +1,5 @@
-import { ActionIcon, Badge, Card, Group, Menu, Progress, Text } from '@mantine/core';
 import { IconDots, IconEdit, IconEye, IconTrash } from '@tabler/icons-react';
+import { ActionIcon, Badge, Card, Group, Menu, Progress, Text } from '@mantine/core';
 
 interface ProjectCardProps {
   title: string;
@@ -17,28 +17,24 @@ export function ProjectCard({
   status,
 }: ProjectCardProps) {
   return (
-    <Card shadow="sm" p="lg" radius="md" withBorder>
-      <Group position="apart" mb="xs">
-        <Text weight={500}>{title}</Text>
-        <Group spacing={0}>
-          <Badge
-            color={status === 'active' ? 'green' : 'gray'}
-            variant="light"
-            size="sm"
-          >
+    <Card shadow="sm" p="md" radius="md" withBorder>
+      <Group justify="space-between" mb="xs">
+        <Text fw={500}>{title}</Text>
+        <Group gap={0}>
+          <Badge color={status === 'active' ? 'green' : 'gray'} variant="light" size="sm">
             {status === 'active' ? 'actif' : 'inactif'}
           </Badge>
-          <Menu withinPortal position="bottom-end" shadow="sm">
+          <Menu position="bottom-end" shadow="sm">
             <Menu.Target>
-              <ActionIcon>
+              <ActionIcon variant="subtle">
                 <IconDots size={16} />
               </ActionIcon>
             </Menu.Target>
 
             <Menu.Dropdown>
-              <Menu.Item icon={<IconEye size={14} />}>Voir</Menu.Item>
-              <Menu.Item icon={<IconEdit size={14} />}>Modifier</Menu.Item>
-              <Menu.Item icon={<IconTrash size={14} />} color="red">
+              <Menu.Item leftSection={<IconEye size={14} />}>Voir</Menu.Item>
+              <Menu.Item leftSection={<IconEdit size={14} />}>Modifier</Menu.Item>
+              <Menu.Item leftSection={<IconTrash size={14} />} color="red">
                 Supprimer
               </Menu.Item>
             </Menu.Dropdown>
@@ -46,11 +42,11 @@ export function ProjectCard({
         </Group>
       </Group>
 
-      <Text size="sm" color="dimmed" mb="md">
+      <Text size="sm" c="dimmed" mb="md">
         {description}
       </Text>
 
-      <Text size="sm" weight={500} mb={5}>
+      <Text size="sm" fw={500} mb={5}>
         Progression
       </Text>
       <Progress
@@ -60,19 +56,19 @@ export function ProjectCard({
         color={successRate === 100 ? 'green' : 'blue'}
       />
 
-      <Group position="apart" mt="md">
+      <Group justify="space-between" mt="md">
         <Text size="sm">Documents générés</Text>
-        <Text size="sm" weight={500}>
+        <Text size="sm" fw={500}>
           {documentsCount}
         </Text>
       </Group>
 
-      <Group position="apart">
+      <Group justify="space-between">
         <Text size="sm">Taux de succès</Text>
-        <Text size="sm" weight={500}>
+        <Text size="sm" fw={500}>
           {successRate}%
         </Text>
       </Group>
     </Card>
   );
-} 
+}
