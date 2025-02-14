@@ -104,7 +104,7 @@ export function ProjectDetails({ project }: ProjectDetailsProps) {
   };
 
   const handleViewDocuments = (modelName: string) => {
-    router.push(`/models?collection=${modelName}`);
+    router.push(`/models/${modelName}?projectId=${project.id}`);
   };
 
   const handleExportJSON = (modelName: string) => {
