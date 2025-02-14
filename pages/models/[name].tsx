@@ -1,10 +1,19 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
-import { IconArrowLeft, IconFilter, IconRefresh, IconSeeding } from '@tabler/icons-react';
+import {
+  IconArrowLeft,
+  IconFilter,
+  IconLink,
+  IconRefresh,
+  IconSeeding,
+  IconUnlink,
+} from '@tabler/icons-react';
 import {
   ActionIcon,
   Button,
   Card,
+  Checkbox,
+  Divider,
   Group,
   JsonInput,
   LoadingOverlay,
@@ -20,6 +29,15 @@ import AppShell from '../../components/Layout/AppShell';
 interface Document {
   _id: string;
   [key: string]: any;
+}
+
+interface RelatedModel {
+  name: string;
+  description: string;
+  fields: string[];
+  isDependent: boolean;
+  selected: boolean;
+  count: number;
 }
 
 export default function ModelGenerationPage() {
@@ -45,6 +63,33 @@ export default function ModelGenerationPage() {
   const [filterQuery, setFilterQuery] = useState('{}');
   const [selectedDocuments, setSelectedDocuments] = useState<string[]>([]);
   const [count, setCount] = useState(10);
+
+  const [relatedModels, setRelatedModels] = useState<RelatedModel[]>([
+    {
+      name: 'Comment',
+      description: 'Commentaires liés à ce modèle',
+      fields: ['_id', 'content', 'userId', 'createdAt'],
+      isDependent: true,
+      selected: false,
+      count: 5,
+    },
+    {
+      name: 'Profile',
+      description: 'Profil utilisateur associé',
+      fields: ['_id', 'userId', 'avatar', 'bio'],
+      isDependent: true,
+      selected: false,
+      count: 1,
+    },
+    {
+      name: 'Post',
+      description: "Publications de l'utilisateur",
+      fields: ['_id', 'title', 'content', 'userId'],
+      isDependent: false,
+      selected: false,
+      count: 3,
+    },
+  ]);
 
   // Données de test pour le modèle sélectionné
   const MOCK_DOCUMENTS: Document[] = [
@@ -104,21 +149,35 @@ export default function ModelGenerationPage() {
         count,
         modelName: name,
         projectId,
+        relatedModels: relatedModels
+          .filter((model) => model.selected)
+          .map((model) => ({
+            name: model.name,
+            isDependent: model.isDependent,
+            count: model.count,
+          })),
       };
 
-      // Ici, vous implémenteriez l'appel API pour générer les données
       console.log('Generating data with:', config);
-
-      // Simuler un délai
       await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Rediriger vers la page du projet
       router.push(`/projects/${projectId}`);
     } catch (error) {
       console.error('Error generating data:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const toggleRelatedModel = (index: number) => {
+    setRelatedModels((prev) =>
+      prev.map((model, i) => (i === index ? { ...model, selected: !model.selected } : model))
+    );
+  };
+
+  const updateRelatedModelCount = (index: number, newCount: number) => {
+    setRelatedModels((prev) =>
+      prev.map((model, i) => (i === index ? { ...model, count: newCount } : model))
+    );
   };
 
   if (!projectId || !name) {
@@ -180,6 +239,81 @@ export default function ModelGenerationPage() {
             >
               Appliquer le filtre
             </Button>
+
+            <Divider my="sm" />
+
+            <Title order={4}>Modèles associés</Title>
+            <Text size="sm" c="dimmed">
+              Sélectionnez les modèles à inclure dans la génération
+            </Text>
+
+            <Stack gap="md">
+              {relatedModels.map((model, index) => (
+                <Card key={index} withBorder>
+                  <Group justify="space-between" align="flex-start">
+                    <Stack gap="xs">
+                      <Group>
+                        <Checkbox
+                          checked={model.selected}
+                          onChange={() => toggleRelatedModel(index)}
+                        />
+                        <Stack gap={0}>
+                          <Text fw={500}>{model.name}</Text>
+                          <Text size="sm" c="dimmed">
+                            {model.description}
+                          </Text>
+                        </Stack>
+                      </Group>
+                      <Text size="sm" c="dimmed" ml={30}>
+                        Champs: {model.fields.join(', ')}
+                      </Text>
+                    </Stack>
+                    <Stack gap="xs" align="flex-end">
+                      {model.isDependent && model.selected && (
+                        <NumberInput
+                          label="Nombre"
+                          value={model.count}
+                          onChange={(value) => updateRelatedModelCount(index, Number(value) || 1)}
+                          min={1}
+                          max={100}
+                          size="xs"
+                          w={100}
+                        />
+                      )}
+                      <Group>
+                        {model.isDependent && (
+                          <Text size="xs" c="blue">
+                            Dépendant
+                          </Text>
+                        )}
+                        {model.selected ? (
+                          <IconLink size={16} style={{ opacity: 0.5 }} />
+                        ) : (
+                          <IconUnlink size={16} style={{ opacity: 0.5 }} />
+                        )}
+                      </Group>
+                    </Stack>
+                  </Group>
+                </Card>
+              ))}
+            </Stack>
+
+            {relatedModels.some((m) => m.selected) && (
+              <Text size="sm" c="dimmed">
+                Les données seront générées pour {name} ({count} documents) et{' '}
+                {relatedModels.filter((m) => m.selected).length} modèle(s) associé(s)
+                {relatedModels.filter((m) => m.selected && m.isDependent).length > 0 && (
+                  <>
+                    {' '}
+                    avec{' '}
+                    {relatedModels
+                      .filter((m) => m.selected && m.isDependent)
+                      .map((m) => `${m.count} ${m.name.toLowerCase()}`)
+                      .join(', ')}
+                  </>
+                )}
+              </Text>
+            )}
           </Stack>
         </Card>
 
