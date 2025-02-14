@@ -1,13 +1,13 @@
 import { ReactNode } from 'react';
 import { AppShell as MantineAppShell } from '@mantine/core';
-import { AppHeader } from './AppHeader';
-import { AppNavbar } from './AppNavbar';
+import AppHeader from './AppHeader';
+import AppNavbar from './AppNavbar';
 
 interface AppShellProps {
   children: ReactNode;
 }
 
-export function AppShell({ children }: AppShellProps) {
+const AppShell = ({ children }: AppShellProps) => {
   return (
     <MantineAppShell
       header={{ height: 60 }}
@@ -25,4 +25,6 @@ export function AppShell({ children }: AppShellProps) {
       <MantineAppShell.Main>{children}</MantineAppShell.Main>
     </MantineAppShell>
   );
-}
+};
+
+export default AppShell;

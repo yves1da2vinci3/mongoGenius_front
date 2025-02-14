@@ -14,7 +14,7 @@ import {
   TextInput,
   Title,
 } from '@mantine/core';
-import { AppShell } from '../components/Layout/AppShell';
+import AppShell from '../components/Layout/AppShell';
 
 // Types pour les documents
 interface Document {
@@ -102,122 +102,111 @@ const FAKE_DOCUMENTS: Document[] = [
   },
 ];
 
-export default function ModelsPage() {
+function ModelsPage() {
   const router = useRouter();
-  const { collection } = router.query;
   const [loading, setLoading] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [perPage, setPerPage] = useState(20);
-
-  const totalDocuments = FAKE_DOCUMENTS.length;
-  const totalPages = Math.ceil(totalDocuments / perPage);
+  const [_currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedRole, setSelectedRole] = useState<string | null>(null);
 
   const handlePreviousPage = () => {
     setCurrentPage((prev) => Math.max(1, prev - 1));
   };
 
   const handleNextPage = () => {
-    setCurrentPage((prev) => Math.min(totalPages, prev + 1));
+    setCurrentPage((prev) => prev + 1);
   };
 
   const handleRefresh = () => {
     setLoading(true);
-    // Simuler un chargement
-    setTimeout(() => {
-      setLoading(false);
-    }, 500);
+    setTimeout(() => setLoading(false), 1000);
   };
 
   return (
     <AppShell>
-      <Paper p="md" pos="relative">
-        <LoadingOverlay visible={loading} />
-
-        <Stack gap="md">
-          <Group justify="space-between">
-            <Group>
-              <ActionIcon variant="light" onClick={() => router.back()}>
-                <IconArrowLeft size={16} />
-              </ActionIcon>
-              <Title order={3}>Collection: {collection || 'User'}</Title>
-              <Text size="sm" c="dimmed">
-                {totalDocuments} documents
-              </Text>
-            </Group>
+      <Stack gap="lg">
+        <Group justify="space-between">
+          <Group>
+            <ActionIcon variant="default" onClick={() => router.push('/projects')} size="lg">
+              <IconArrowLeft size={20} />
+            </ActionIcon>
+            <Title order={2}>Documents générés</Title>
           </Group>
 
           <Group>
-            <TextInput
-              placeholder='{ "field": "value" }'
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.currentTarget.value)}
-              style={{ flex: 1 }}
-            />
-            <Button variant="light" leftSection={<IconRefresh size={16} />} onClick={handleRefresh}>
-              Actualiser
-            </Button>
-            <Button variant="light" leftSection={<IconSettings size={16} />}>
-              Options
-            </Button>
+            <ActionIcon variant="default" onClick={handleRefresh} size="lg">
+              <IconRefresh size={20} />
+            </ActionIcon>
+            <ActionIcon variant="default" size="lg">
+              <IconSettings size={20} />
+            </ActionIcon>
           </Group>
+        </Group>
 
-          <Group justify="space-between">
-            <Select
-              value={String(perPage)}
-              onChange={(value) => value && setPerPage(parseInt(value, 10))}
-              data={[
-                { value: '10', label: '10 par page' },
-                { value: '20', label: '20 par page' },
-                { value: '50', label: '50 par page' },
-                { value: '100', label: '100 par page' },
-              ]}
-              style={{ width: 130 }}
-            />
+        <Group>
+          <TextInput
+            placeholder="Rechercher..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          <Select
+            placeholder="Filtrer par rôle"
+            value={selectedRole}
+            onChange={setSelectedRole}
+            data={[
+              { value: 'admin', label: 'Admin' },
+              { value: 'customer', label: 'Client' },
+            ]}
+            clearable
+          />
+        </Group>
 
-            <Group>
-              <ActionIcon variant="light" disabled={currentPage === 1} onClick={handlePreviousPage}>
-                <IconArrowLeft size={16} />
-              </ActionIcon>
-              <Text size="sm">
-                Page {currentPage} sur {totalPages}
-              </Text>
-              <ActionIcon
-                variant="light"
-                disabled={currentPage === totalPages}
-                onClick={handleNextPage}
-              >
-                <IconArrowLeft size={16} style={{ transform: 'rotate(180deg)' }} />
-              </ActionIcon>
-            </Group>
-          </Group>
-
-          <Table striped highlightOnHover withTableBorder withColumnBorders>
+        <Paper pos="relative" p="md" withBorder>
+          <LoadingOverlay visible={loading} />
+          <Table>
             <Table.Thead>
               <Table.Tr>
-                <Table.Th>EMAIL (STRING)</Table.Th>
-                <Table.Th>PASSWORD (STRING)</Table.Th>
-                <Table.Th>FIRSTNAME (STRING)</Table.Th>
-                <Table.Th>LASTNAME (STRING)</Table.Th>
-                <Table.Th>ROLE (STRING)</Table.Th>
-                <Table.Th>ADDRESSES (ARRAY)</Table.Th>
+                <Table.Th>Email</Table.Th>
+                <Table.Th>Prénom</Table.Th>
+                <Table.Th>Nom</Table.Th>
+                <Table.Th>Rôle</Table.Th>
+                <Table.Th>Actions</Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
-              {FAKE_DOCUMENTS.map((doc, index) => (
-                <Table.Tr key={index}>
+              {FAKE_DOCUMENTS.map((doc) => (
+                <Table.Tr key={doc.email}>
                   <Table.Td>{doc.email}</Table.Td>
-                  <Table.Td>{doc.password}</Table.Td>
                   <Table.Td>{doc.firstName}</Table.Td>
                   <Table.Td>{doc.lastName}</Table.Td>
                   <Table.Td>{doc.role}</Table.Td>
-                  <Table.Td>{JSON.stringify(doc.addresses)}</Table.Td>
+                  <Table.Td>
+                    <Button variant="light" size="xs">
+                      Voir
+                    </Button>
+                  </Table.Td>
                 </Table.Tr>
               ))}
             </Table.Tbody>
           </Table>
-        </Stack>
-      </Paper>
+        </Paper>
+
+        <Group justify="space-between">
+          <Text size="sm" c="dimmed">
+            Affichage de {FAKE_DOCUMENTS.length} documents
+          </Text>
+          <Group>
+            <Button variant="default" onClick={handlePreviousPage}>
+              Précédent
+            </Button>
+            <Button variant="default" onClick={handleNextPage}>
+              Suivant
+            </Button>
+          </Group>
+        </Group>
+      </Stack>
     </AppShell>
   );
 }
+
+export default ModelsPage;

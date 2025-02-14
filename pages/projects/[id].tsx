@@ -1,5 +1,5 @@
 import { useRouter } from 'next/router';
-import { AppShell } from '../../components/Layout/AppShell';
+import AppShell from '../../components/Layout/AppShell';
 import { ProjectDetails } from '../../components/Projects/ProjectDetails';
 import { useProjectStore } from '../../store/useProjectStore';
 
@@ -12,7 +12,7 @@ const FAKE_PROJECT = {
   status: 'active' as const,
 };
 
-export default function ProjectPage() {
+function ProjectPage() {
   const router = useRouter();
   const { id } = router.query;
   const projects = useProjectStore((state) => state.projects);
@@ -32,3 +32,5 @@ export default function ProjectPage() {
     </AppShell>
   );
 }
+
+export default ProjectPage;

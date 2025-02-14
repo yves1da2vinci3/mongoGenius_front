@@ -1,7 +1,7 @@
 import { useRouter } from 'next/router';
 import { IconPlus } from '@tabler/icons-react';
 import { Button, Grid, Group, Paper, Stack, Text, Title } from '@mantine/core';
-import { AppShell } from '../../components/Layout/AppShell';
+import AppShell from '../../components/Layout/AppShell';
 import { ProjectCard } from '../../components/Projects/ProjectCard';
 import { useProjectStore } from '../../store/useProjectStore';
 

@@ -1,5 +1,5 @@
 import { Grid, Group, Paper, RingProgress, Stack, Text, Title } from '@mantine/core';
-import { AppShell } from '../components/Layout/AppShell';
+import AppShell from '../components/Layout/AppShell';
 
 export default function StatsPage() {
   return (

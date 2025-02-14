@@ -8,18 +8,16 @@ import { ModalsProvider } from '@mantine/modals';
 import { Notifications } from '@mantine/notifications';
 import { theme } from '../theme';
 
-export default function App(props: AppProps) {
-  const { Component, pageProps } = props;
-
+function App({ Component, pageProps }: AppProps) {
   return (
     <>
       <Head>
         <title>MongoGenius - Générateur de données MongoDB</title>
         <meta name="viewport" content="minimum-scale=1, initial-scale=1, width=device-width" />
         <link rel="icon" href="/favicon.ico" />
-        <ColorSchemeScript />
       </Head>
 
+      <ColorSchemeScript />
       <MantineProvider theme={theme} defaultColorScheme="auto">
         <ModalsProvider labels={{ confirm: 'Confirmer', cancel: 'Annuler' }}>
           <Notifications position="top-right" />
@@ -29,3 +27,5 @@ export default function App(props: AppProps) {
     </>
   );
 }
+
+export default App;

@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { default as NextLink } from 'next/link';
 import { useRouter } from 'next/router';
 import { IconChartBar, IconDatabase, IconHome, IconSettings } from '@tabler/icons-react';
 import { Group, NavLink, Stack, Text } from '@mantine/core';
@@ -7,7 +7,7 @@ interface AppNavbarProps {
   width: { base: number };
 }
 
-export function AppNavbar({ width }: AppNavbarProps) {
+const AppNavbar = ({ width: _width }: AppNavbarProps) => {
   const router = useRouter();
 
   const links = [
@@ -23,7 +23,7 @@ export function AppNavbar({ width }: AppNavbarProps) {
         {links.map((link) => (
           <NavLink
             key={link.href}
-            component={Link}
+            component={NextLink}
             href={link.href}
             label={link.label}
             leftSection={<link.icon size={20} stroke={1.5} />}
@@ -39,4 +39,6 @@ export function AppNavbar({ width }: AppNavbarProps) {
       </Group>
     </Stack>
   );
-}
+};
+
+export default AppNavbar;

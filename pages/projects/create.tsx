@@ -20,7 +20,7 @@ import {
 import { Dropzone, FileWithPath } from '@mantine/dropzone';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
-import { AppShell } from '../../components/Layout/AppShell';
+import AppShell from '../../components/Layout/AppShell';
 import { useProjectStore } from '../../store/useProjectStore';
 
 export default function CreateProjectPage() {

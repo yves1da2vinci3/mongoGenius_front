@@ -18,9 +18,9 @@ import {
   ThemeIcon,
   Title,
 } from '@mantine/core';
-import { AppShell } from '../components/Layout/AppShell';
+import AppShell from '../components/Layout/AppShell';
 
-export default function HomePage() {
+function HomePage() {
   const router = useRouter();
 
   const features = [
@@ -48,8 +48,8 @@ export default function HomePage() {
                 </Title>
 
                 <Text size="xl" c="dimmed">
-                  MongoGenius analyse automatiquement vos schémas Mongoose et génère des données
-                  cohérentes avec des relations intactes.
+                  MongoGenius simplifie la génération de données de test pour vos applications
+                  MongoDB
                 </Text>
 
                 <Group>
@@ -158,3 +158,5 @@ export default function HomePage() {
     </AppShell>
   );
 }
+
+export default HomePage;
