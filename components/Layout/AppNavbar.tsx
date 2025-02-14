@@ -1,6 +1,6 @@
 import { default as NextLink } from 'next/link';
 import { useRouter } from 'next/router';
-import { IconChartBar, IconDatabase, IconHome, IconSettings } from '@tabler/icons-react';
+import { IconChartBar, IconDatabase, IconHome, IconRobot, IconSettings } from '@tabler/icons-react';
 import { Group, NavLink, Stack, Text } from '@mantine/core';
 
 interface AppNavbarProps {
@@ -13,6 +13,7 @@ const AppNavbar = ({ width: _width }: AppNavbarProps) => {
   const links = [
     { icon: IconHome, label: 'Accueil', href: '/' },
     { icon: IconDatabase, label: 'Projets', href: '/projects' },
+    { icon: IconRobot, label: 'ChatBot', href: '/chatbot' },
     { icon: IconChartBar, label: 'Statistiques', href: '/stats' },
     { icon: IconSettings, label: 'Paramètres', href: '/settings' },
   ];
