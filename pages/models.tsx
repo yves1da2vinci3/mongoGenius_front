@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
-import { IconArrowLeft, IconDatabase, IconRefresh, IconSettings } from '@tabler/icons-react';
+import { IconArrowLeft, IconRefresh, IconSettings, IconTable } from '@tabler/icons-react';
 import {
   ActionIcon,
   Button,
   Group,
-  LoadingOverlay,
   Paper,
   Select,
   Stack,
@@ -18,129 +17,71 @@ import AppShell from '../components/Layout/AppShell';
 
 // Types pour les documents
 interface Document {
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-  role: string;
-  addresses: { street: string; city: string }[];
+  _id: string;
+  [key: string]: any;
 }
-
-// Données factices
-const FAKE_DOCUMENTS: Document[] = [
-  {
-    email: 'Misael63@hotmail.com',
-    password: 'RmF5rkmErXLKcSh',
-    firstName: 'Jesus',
-    lastName: 'Bauch',
-    role: 'customer',
-    addresses: [{ street: 'cras omnis ab', city: 'rerum constans t' }],
-  },
-  {
-    email: 'Mckenzie.Casper@hotmail.com',
-    password: '8tqwzzJPwCpUbKG',
-    firstName: 'Tricia',
-    lastName: 'Dietrich',
-    role: 'admin',
-    addresses: [{ street: 'theologus victoria comitatus', city: 'co' }],
-  },
-  {
-    email: 'Gertrude64@gmail.com',
-    password: 'srBqMT8weP2Lkpv',
-    firstName: 'Maxine',
-    lastName: 'Graham',
-    role: 'customer',
-    addresses: [{ street: 'atqui arma vere', city: 'cultura cotidie' }],
-  },
-  {
-    email: 'Kenya93@yahoo.com',
-    password: 'fAJtam0Txcns3XM',
-    firstName: 'Patty',
-    lastName: 'Walsh DVM',
-    role: 'admin',
-    addresses: [{ street: 'tribuo adficio caute', city: 'soluta aetas' }],
-  },
-  {
-    email: 'Kyra_Kunde@gmail.com',
-    password: 'uNUergVdkPVylIW',
-    firstName: 'Lorene',
-    lastName: 'Dr. Kristi Reilly',
-    role: 'admin',
-    addresses: [{ street: 'suppono deinde architecto', city: 'blan' }],
-  },
-  {
-    email: 'Keara12@yahoo.com',
-    password: 'GaYzpAwCMBXVuyy',
-    firstName: 'Joshua',
-    lastName: 'Kunze-Hackett IV',
-    role: 'admin',
-    addresses: [{ street: 'suffoco unus accommodo', city: 'collig' }],
-  },
-  {
-    email: 'Zora_Bergstrom26@yahoo.com',
-    password: 'Qz7u4F7q4ulzDs4',
-    firstName: 'Bertha',
-    lastName: 'Lemke',
-    role: 'admin',
-    addresses: [{ street: 'torqueo vero canonicus', city: 'at vere' }],
-  },
-  {
-    email: 'Ahmed_Dickens@gmail.com',
-    password: '2Q0QGrw3uzku0G8',
-    firstName: 'Perry',
-    lastName: 'Hessel',
-    role: 'customer',
-    addresses: [{ street: 'tot ullam trado', city: 'ipsa porro dolor' }],
-  },
-  {
-    email: 'Sheldon_Cummerata@gmail.com',
-    password: 'PY18BVC9tCZ9x_g',
-    firstName: 'Anna',
-    lastName: 'Parisian',
-    role: 'admin',
-    addresses: [{ street: 'blandior statua sursum', city: 'officia t' }],
-  },
-];
 
 function ModelsPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [_currentPage, setCurrentPage] = useState(1);
+  const { projectId } = router.query;
+  const [_loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedRole, setSelectedRole] = useState<string | null>(null);
+  const [selectedField, setSelectedField] = useState<string | null>(null);
 
-  const handlePreviousPage = () => {
-    setCurrentPage((prev) => Math.max(1, prev - 1));
-  };
-
-  const handleNextPage = () => {
-    setCurrentPage((prev) => prev + 1);
-  };
+  // Données de test (à remplacer par les vraies données de l'API)
+  const MOCK_DOCUMENTS: Document[] = [
+    {
+      _id: '1',
+      name: 'User',
+      fields: ['email', 'password', 'firstName', 'lastName', 'role'],
+      relations: ['posts', 'comments'],
+      documentCount: 1000,
+    },
+    {
+      _id: '2',
+      name: 'Post',
+      fields: ['title', 'content', 'author', 'comments'],
+      relations: ['users', 'comments'],
+      documentCount: 500,
+    },
+    {
+      _id: '3',
+      name: 'Comment',
+      fields: ['content', 'author', 'post'],
+      relations: ['users', 'posts'],
+      documentCount: 2000,
+    },
+  ];
 
   const handleRefresh = () => {
     setLoading(true);
     setTimeout(() => setLoading(false), 1000);
   };
 
+  const filteredDocuments = MOCK_DOCUMENTS.filter((doc) => {
+    const matchesSearch = doc.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesField = selectedField ? doc.fields.includes(selectedField) : true;
+    return matchesSearch && matchesField;
+  });
+
+  const allFields = Array.from(new Set(MOCK_DOCUMENTS.flatMap((doc) => doc.fields)));
+
   return (
     <AppShell>
       <Stack gap="lg">
         <Group justify="space-between">
           <Group>
-            <ActionIcon variant="default" onClick={() => router.push('/projects')} size="lg">
+            <ActionIcon
+              variant="default"
+              onClick={() => router.push(`/projects/${projectId}`)}
+              size="lg"
+            >
               <IconArrowLeft size={20} />
             </ActionIcon>
-            <Title order={2}>Documents générés</Title>
+            <Title order={2}>Modèles du projet</Title>
           </Group>
 
           <Group>
-            <Button
-              variant="light"
-              onClick={() => router.push('/collections')}
-              leftSection={<IconDatabase size={20} />}
-            >
-              Collections
-            </Button>
             <ActionIcon variant="default" onClick={handleRefresh} size="lg">
               <IconRefresh size={20} />
             </ActionIcon>
@@ -152,44 +93,64 @@ function ModelsPage() {
 
         <Group>
           <TextInput
-            placeholder="Rechercher..."
+            placeholder="Rechercher un modèle..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            style={{ flex: 1 }}
           />
           <Select
-            placeholder="Filtrer par rôle"
-            value={selectedRole}
-            onChange={setSelectedRole}
+            placeholder="Filtrer par champ"
+            value={selectedField}
+            onChange={setSelectedField}
             data={[
-              { value: 'admin', label: 'Admin' },
-              { value: 'customer', label: 'Client' },
+              { value: '', label: 'Tous les champs' },
+              ...allFields.map((field) => ({
+                value: field,
+                label: field,
+              })),
             ]}
             clearable
           />
         </Group>
 
-        <Paper pos="relative" p="md" withBorder>
-          <LoadingOverlay visible={loading} />
+        <Paper p="md" withBorder>
           <Table>
             <Table.Thead>
               <Table.Tr>
-                <Table.Th>Email</Table.Th>
-                <Table.Th>Prénom</Table.Th>
-                <Table.Th>Nom</Table.Th>
-                <Table.Th>Rôle</Table.Th>
+                <Table.Th>Nom du modèle</Table.Th>
+                <Table.Th>Champs</Table.Th>
+                <Table.Th>Relations</Table.Th>
+                <Table.Th>Documents</Table.Th>
                 <Table.Th>Actions</Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
-              {FAKE_DOCUMENTS.map((doc) => (
-                <Table.Tr key={doc.email}>
-                  <Table.Td>{doc.email}</Table.Td>
-                  <Table.Td>{doc.firstName}</Table.Td>
-                  <Table.Td>{doc.lastName}</Table.Td>
-                  <Table.Td>{doc.role}</Table.Td>
+              {filteredDocuments.map((doc) => (
+                <Table.Tr key={doc._id}>
                   <Table.Td>
-                    <Button variant="light" size="xs">
-                      Voir
+                    <Text fw={500}>{doc.name}</Text>
+                  </Table.Td>
+                  <Table.Td>
+                    <Text size="sm">{doc.fields.join(', ')}</Text>
+                  </Table.Td>
+                  <Table.Td>
+                    <Text size="sm" c="blue">
+                      {doc.relations.join(', ')}
+                    </Text>
+                  </Table.Td>
+                  <Table.Td>
+                    <Text size="sm">{doc.documentCount}</Text>
+                  </Table.Td>
+                  <Table.Td>
+                    <Button
+                      variant="light"
+                      size="xs"
+                      leftSection={<IconTable size={14} />}
+                      onClick={() =>
+                        router.push(`/models/${doc.name.toLowerCase()}?projectId=${projectId}`)
+                      }
+                    >
+                      Explorer
                     </Button>
                   </Table.Td>
                 </Table.Tr>
@@ -197,20 +158,6 @@ function ModelsPage() {
             </Table.Tbody>
           </Table>
         </Paper>
-
-        <Group justify="space-between">
-          <Text size="sm" c="dimmed">
-            Affichage de {FAKE_DOCUMENTS.length} documents
-          </Text>
-          <Group>
-            <Button variant="default" onClick={handlePreviousPage}>
-              Précédent
-            </Button>
-            <Button variant="default" onClick={handleNextPage}>
-              Suivant
-            </Button>
-          </Group>
-        </Group>
       </Stack>
     </AppShell>
   );

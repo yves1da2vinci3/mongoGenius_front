@@ -1,6 +1,12 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
-import { IconChartBar, IconDatabase, IconMaximizeOff, IconSettings } from '@tabler/icons-react';
+import {
+  IconChartBar,
+  IconDatabase,
+  IconMaximizeOff,
+  IconPlayerPlay,
+  IconSettings,
+} from '@tabler/icons-react';
 import {
   ActionIcon,
   Button,
@@ -118,7 +124,7 @@ export function ProjectDetails({ project }: ProjectDetailsProps) {
             {project.description}
           </Text>
         </div>
-        <Button>Exécuter la génération</Button>
+        <Button leftSection={<IconPlayerPlay size={16} />}>Exécuter la génération</Button>
       </Group>
 
       <Paper p="md" radius="md" withBorder>
