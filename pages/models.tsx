@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
-import { IconArrowLeft, IconRefresh, IconSettings } from '@tabler/icons-react';
+import { IconArrowLeft, IconDatabase, IconRefresh, IconSettings } from '@tabler/icons-react';
 import {
   ActionIcon,
   Button,
@@ -134,6 +134,13 @@ function ModelsPage() {
           </Group>
 
           <Group>
+            <Button
+              variant="light"
+              onClick={() => router.push('/collections')}
+              leftSection={<IconDatabase size={20} />}
+            >
+              Collections
+            </Button>
             <ActionIcon variant="default" onClick={handleRefresh} size="lg">
               <IconRefresh size={20} />
             </ActionIcon>
