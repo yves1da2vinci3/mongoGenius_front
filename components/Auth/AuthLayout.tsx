@@ -9,7 +9,7 @@ interface AuthLayoutProps {
 
 export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
   return (
-    <Flex mih="100vh" bg="gray.0">
+    <Flex justify="center" align="center" mih="100vh" bg="gray.0">
       <Container size="lg" py="xl" w="100%">
         <Flex gap={0} style={{ overflow: 'hidden', borderRadius: 'md' }}>
           <Box bg="brand.6" p="xl" style={{ flex: '1', color: 'white', minHeight: '600px' }}>
